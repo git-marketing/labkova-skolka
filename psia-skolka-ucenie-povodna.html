@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Psia Škôlka — Učíme sa hrou</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#6FCBFF; --sky-bot:#CFF3FF; --sand:#FFE7A8;
+    --road:#5B6472; --line:#FFD84D; --card:#FFFFFF; --ink:#2E3140;
+    --shadow: 0 8px 0 rgba(0,0,0,0.12);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Fredoka', sans-serif;
+    background:linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bot) 45%, var(--sand) 45%, var(--sand) 100%);
+    min-height:100vh; overflow-x:hidden; color:var(--ink); position:relative;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button{ touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; font-family:inherit; }
+
+  .cloud{ position:absolute; width:100px; height:36px; background:#fff; border-radius:50px; opacity:.9; animation: drift 44s linear infinite; }
+  .cloud::before,.cloud::after{ content:''; position:absolute; background:#fff; border-radius:50%; }
+  .cloud::before{ width:50px; height:50px; top:-25px; left:10px; }
+  .cloud::after{ width:36px; height:36px; top:-16px; left:52px; }
+  .cloud.c1{ left:-150px; top:4%; }
+  .cloud.c2{ left:-150px; top:12%; transform:scale(.65); animation-delay:14s; }
+  @keyframes drift{ from{transform:translateX(0);} to{transform:translateX(160vw);} }
+
+  h1{
+    text-align:center; font-size:clamp(20px,6vw,38px); font-weight:700; margin:12px 10px 4px;
+    text-shadow:2px 2px 0 #fff,-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff;
+    position:relative; z-index:2; animation:bob 3s ease-in-out infinite;
+  }
+  @keyframes bob{ 0%,100%{transform:translateY(0) rotate(-1deg);} 50%{transform:translateY(-6px) rotate(1deg);} }
+  .sub{ text-align:center; font-size:clamp(12px,3.2vw,16px); font-weight:500; color:#3d4258; margin-bottom:10px; padding:0 10px; position:relative; z-index:2; }
+
+  /* TABS — flex-wrap for phones */
+  .tabs{
+    max-width:820px; margin:0 auto 14px; padding:0 10px;
+    display:flex; flex-wrap:wrap; gap:7px; justify-content:center; position:relative; z-index:2;
+  }
+  .tab-btn{
+    background:#fff; border:none; border-radius:16px; padding:8px 10px; cursor:pointer;
+    box-shadow:var(--shadow); font-weight:700; font-size:clamp(10px,2.6vw,12.5px);
+    display:flex; flex-direction:column; align-items:center; gap:2px; color:#7a7f95;
+    transition:transform .12s ease; border-bottom:5px solid transparent; flex:0 1 auto; min-width:58px;
+  }
+  .tab-btn span{ font-size:clamp(15px,3.8vw,18px); }
+  .tab-btn.active{ color:var(--ink); border-bottom-color:#FFD84D; transform:translateY(2px); box-shadow:0 3px 0 rgba(0,0,0,0.12); }
+  .tab-btn:active{ transform:translateY(5px); box-shadow:0 2px 0 rgba(0,0,0,0.12); }
+
+  .panel{ display:none; max-width:900px; margin:0 auto; padding:0 10px 26px; position:relative; z-index:2; }
+  .panel.active{ display:block; }
+
+  .card-surface{
+    background:rgba(255,255,255,0.55); border-radius:24px; padding:16px; min-height:260px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+  }
+  .instruction{
+    font-weight:700; font-size:clamp(13px,3.4vw,18px); text-align:center; color:#3d4258;
+    background:#fff; padding:9px 16px; border-radius:16px; box-shadow:var(--shadow);
+  }
+
+  /* ---- COLORS / SHAPES / EMOTIONS / WEATHER shared "big stage" look ---- */
+  .big-stage{ width:100%; display:flex; align-items:center; justify-content:center; min-height:150px; position:relative; }
+  .big-dog{ width:130px; height:112px; position:relative; }
+  .big-dog svg{ width:100%; height:100%; filter:drop-shadow(0 8px 0 rgba(0,0,0,0.1)); }
+  .big-shape{ width:120px; height:120px; position:relative; }
+  .big-shape svg{ width:100%; height:100%; filter:drop-shadow(0 8px 0 rgba(0,0,0,0.1)); }
+  .color-label{
+    position:absolute; top:-6px; left:50%; transform:translateX(-50%);
+    background:var(--accent,#333); color:#fff; font-weight:700; font-size:14px;
+    padding:5px 14px; border-radius:14px; box-shadow:0 4px 0 rgba(0,0,0,0.15);
+    opacity:0; transition:opacity .2s ease; white-space:nowrap;
+  }
+  .color-label.show{ opacity:1; }
+  .swatch-row{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+  .swatch{ width:52px; height:52px; border-radius:50%; border:none; cursor:pointer; box-shadow:var(--shadow); transition:transform .12s ease; position:relative; background:#fff; display:flex; align-items:center; justify-content:center; }
+  .swatch:active{ transform:translateY(5px); box-shadow:0 2px 0 rgba(0,0,0,0.12); }
+  .swatch.picked::after{ content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; font-weight:700; }
+  .swatch.shape-btn{ border-radius:16px; }
+
+  .fact-text{ font-size:clamp(12px,3vw,15px); font-weight:600; color:#3d4258; text-align:center; min-height:20px; padding:0 8px; }
+
+  /* ---- COUNT TAB ---- */
+  .count-display{ font-size:clamp(38px,14vw,72px); font-weight:700; color:#3E92CC; background:#fff; border-radius:20px; padding:5px 26px; box-shadow:var(--shadow); min-width:90px; text-align:center; }
+  .paw-row{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .paw-btn{ width:58px; height:58px; border-radius:16px; border:none; cursor:pointer; background:#fff; box-shadow:var(--shadow); font-size:24px; display:flex; align-items:center; justify-content:center; transition:transform .15s ease; position:relative; overflow:hidden; }
+  .paw-btn:active{ transform:translateY(5px); box-shadow:0 2px 0 rgba(0,0,0,0.12); }
+  .paw-btn.done{ background:var(--accent); }
+  .paw-btn.done svg{ width:70%; height:70%; }
+  .replay-btn{ margin-top:2px; background:#FFD84D; border:none; border-radius:16px; padding:10px 22px; font-weight:700; font-size:14px; cursor:pointer; box-shadow:var(--shadow); }
+  .replay-btn:active{ transform:translateY(5px); box-shadow:0 2px 0 rgba(0,0,0,0.12); }
+  .celebrate{ font-size:clamp(14px,3.8vw,21px); font-weight:700; text-align:center; color:#2E8A5B; opacity:0; transition:opacity .3s ease; }
+  .celebrate.show{ opacity:1; }
+
+  /* ---- CARS TAB ---- */
+  .stage{ position:relative; height:190px; border-radius:22px; overflow:hidden; width:100%; background:linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.35) 100%); }
+  .sun{ position:absolute; top:10px; right:18px; width:40px; height:40px; border-radius:50%; background:radial-gradient(circle at 35% 35%, #FFF3B0, #FFCB3D); box-shadow:0 0 0 6px rgba(255,203,61,0.25); animation:pulse 2.5s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
+  .road{ position:absolute; bottom:0; left:0; right:0; height:48px; background:var(--road); }
+  .road::before{ content:''; position:absolute; top:50%; left:0; right:0; height:4px; transform:translateY(-50%); background-image:repeating-linear-gradient(90deg, var(--line) 0 28px, transparent 28px 52px); animation:roadmove 1.2s linear infinite; }
+  @keyframes roadmove{ from{background-position-x:0;} to{background-position-x:-52px;} }
+  #actor-layer{ position:absolute; inset:0; }
+  .placeholder-msg{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:0 16px; color:#5a5f75; font-size:clamp(12px,3vw,16px); font-weight:600; }
+  .placeholder-msg .big-paw{ font-size:38px; margin-bottom:4px; animation:wiggle 2s ease-in-out infinite; }
+  @keyframes wiggle{ 0%,100%{transform:rotate(0);} 25%{transform:rotate(-12deg);} 75%{transform:rotate(12deg);} }
+  .dock{ margin-top:10px; display:grid; grid-template-columns:repeat(auto-fit,minmax(84px,1fr)); gap:8px; width:100%; }
+  .pup-btn{ background:#fff; border:none; border-radius:18px; padding:8px 4px; cursor:pointer; box-shadow:var(--shadow); display:flex; flex-direction:column; align-items:center; gap:3px; border-bottom:5px solid transparent; transition:transform .12s ease; }
+  .pup-btn:active{ transform:translateY(5px); box-shadow:0 2px 0 rgba(0,0,0,0.12); }
+  .pup-btn.selected{ border-bottom-color:var(--accent); }
+  .pup-avatar{ width:42px; height:42px; }
+  .pup-avatar svg{ width:100%; height:100%; animation:idle-wag 1.6s ease-in-out infinite; transform-origin:50% 80%; }
+  @keyframes idle-wag{ 0%,100%{transform:rotate(-3deg);} 50%{transform:rotate(3deg);} }
+  .pup-name{ font-weight:700; font-size:12.5px; }
+  .pup-job{ font-size:10px; color:#7a7f95; font-weight:500; }
+  .confetti-piece{ position:absolute; width:9px; height:9px; top:20px; opacity:0; border-radius:2px; }
+
+  /* ---- QUIZ TAB ---- */
+  .quiz-q{ font-weight:700; font-size:clamp(14px,3.8vw,20px); text-align:center; color:#2E3140; background:#fff; padding:10px 18px; border-radius:16px; box-shadow:var(--shadow); }
+  .quiz-replay{ background:#fff; border:none; border-radius:50%; width:40px; height:40px; font-size:16px; cursor:pointer; box-shadow:var(--shadow); flex-shrink:0; }
+  .quiz-replay:active{ transform:translateY(4px); box-shadow:0 2px 0 rgba(0,0,0,0.12); }
+  .quiz-options{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; }
+  .quiz-opt{ width:82px; height:82px; border-radius:20px; border:4px solid transparent; background:#fff; cursor:pointer; box-shadow:var(--shadow); padding:6px; transition:transform .12s ease, border-color .2s ease; }
+  .quiz-opt:active{ transform:translateY(5px); }
+  .quiz-opt.correct{ border-color:#4CAF7D; }
+  .quiz-opt.wrong{ border-color:#FF5A5F; }
+  .quiz-opt:disabled{ opacity:0.55; cursor:default; }
+  .quiz-feedback{ font-size:clamp(13px,3.4vw,18px); font-weight:700; text-align:center; min-height:24px; opacity:0; transition:opacity .2s ease; color:#3d4258; }
+  .quiz-feedback.show{ opacity:1; }
+  .quiz-feedback.good{ color:#2E8A5B; }
+
+  /* ---- MEMORY (PEXESO) TAB ---- */
+  .memo-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; width:100%; max-width:380px; margin:0 auto; }
+  .memo-card{ aspect-ratio:1/1; perspective:600px; }
+  .memo-card-inner{ position:relative; width:100%; height:100%; transition:transform .45s; transform-style:preserve-3d; cursor:pointer; }
+  .memo-card.flipped .memo-card-inner, .memo-card.matched .memo-card-inner{ transform:rotateY(180deg); }
+  .memo-face{ position:absolute; inset:0; backface-visibility:hidden; border-radius:14px; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow); }
+  .memo-back{ background:linear-gradient(135deg,#FFD84D,#FFA630); font-size:clamp(18px,5vw,26px); }
+  .memo-front{ background:#fff; transform:rotateY(180deg); padding:6px; }
+  .memo-card.matched .memo-front{ background:#eafff1; }
+  .memo-status{ font-weight:700; font-size:clamp(13px,3.4vw,17px); color:#3d4258; text-align:center; }
+  .memo-celebrate{ font-size:clamp(15px,3.8vw,20px); font-weight:700; text-align:center; color:#2E8A5B; opacity:0; transition:opacity .3s ease; }
+  .memo-celebrate.show{ opacity:1; }
+
+  /* ---- SIZE TAB ---- */
+  .size-stage{ display:flex; gap:24px; align-items:flex-end; justify-content:center; min-height:170px; width:100%; flex-wrap:wrap; }
+  .size-dog-btn{ background:none; border:none; cursor:pointer; padding:0; }
+  .size-dog-btn svg{ display:block; filter:drop-shadow(0 6px 0 rgba(0,0,0,0.1)); }
+
+  /* ---- SORT TAB ---- */
+  .sort-items{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+  .sort-item{ width:58px; height:58px; border-radius:16px; background:#fff; border:4px solid transparent; font-size:28px; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow); cursor:pointer; transition:transform .12s ease, border-color .2s ease; }
+  .sort-item.selected{ border-color:#FFD84D; transform:translateY(-4px); }
+  .sort-item.done{ opacity:0.2; pointer-events:none; }
+  .sort-bins{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .sort-bin{ width:80px; height:80px; border-radius:18px; border:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; color:#fff; font-weight:700; font-size:11.5px; box-shadow:var(--shadow); cursor:pointer; transition:transform .12s ease; }
+  .sort-bin:active{ transform:translateY(5px); }
+
+  /* ---- WEATHER TAB ---- */
+  .weather-stage{ position:relative; width:100%; min-height:160px; display:flex; align-items:center; justify-content:center; overflow:hidden; border-radius:20px; }
+  #weatherParticles{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+  .weather-particle{ position:absolute; top:-14px; }
+
+  @media (max-width:400px){
+    .card-surface{ padding:12px; gap:10px; }
+    h1{ margin-top:10px; }
+    .tabs{ gap:6px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){ *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; } }
+  footer{ text-align:center; font-size:11px; color:#5a5f75aa; padding-bottom:12px; position:relative; z-index:2; }
+</style>
+</head>
+<body>
+
+<div class="cloud c1"></div>
+<div class="cloud c2"></div>
+
+<h1>🐾 Psia Škôlka 🐾</h1>
+<div class="sub">10 veselých hier na učenie — farby, tvary, čísla, nálady a viac!</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="colors"><span>🎨</span>Farby</button>
+  <button class="tab-btn" data-tab="shapes"><span>🔺</span>Tvary</button>
+  <button class="tab-btn" data-tab="count"><span>🔢</span>Počítanie</button>
+  <button class="tab-btn" data-tab="size"><span>📏</span>Veľký/Malý</button>
+  <button class="tab-btn" data-tab="cars"><span>🚗</span>Povolania</button>
+  <button class="tab-btn" data-tab="emotions"><span>😊</span>Nálady</button>
+  <button class="tab-btn" data-tab="sort"><span>♻️</span>Triedenie</button>
+  <button class="tab-btn" data-tab="weather"><span>🌦️</span>Počasie</button>
+  <button class="tab-btn" data-tab="memo"><span>🧠</span>Pexeso</button>
+  <button class="tab-btn" data-tab="quiz"><span>❓</span>Kvíz</button>
+</div>
+
+<!-- COLORS PANEL -->
+<div class="panel active" id="panel-colors">
+  <div class="card-surface">
+    <div class="instruction">Klikni na farbu a spoznaj psíka!</div>
+    <div class="big-stage"><div class="big-dog" id="bigDog"><div class="color-label" id="colorLabel"></div></div></div>
+    <div class="swatch-row" id="swatchRow"></div>
+  </div>
+</div>
+
+<!-- SHAPES PANEL -->
+<div class="panel" id="panel-shapes">
+  <div class="card-surface">
+    <div class="instruction">Klikni na tvar a spoznaj ho!</div>
+    <div class="big-stage"><div class="big-shape" id="bigShape"></div></div>
+    <div class="fact-text" id="shapeFact"></div>
+    <div class="swatch-row" id="shapeRow"></div>
+  </div>
+</div>
+
+<!-- COUNT PANEL -->
+<div class="panel" id="panel-count">
+  <div class="card-surface">
+    <div class="instruction">Ťukaj na labky a počítaj so mnou!</div>
+    <div class="count-display" id="countDisplay">0</div>
+    <div class="paw-row" id="pawRow"></div>
+    <div class="celebrate" id="celebrate">Hurá! Šesť psíkov je spočítaných! 🎉</div>
+    <button class="replay-btn" id="replayBtn">🔄 Skús znova</button>
+  </div>
+</div>
+
+<!-- SIZE PANEL -->
+<div class="panel" id="panel-size">
+  <div class="card-surface">
+    <div class="instruction" id="sizePrompt">Nájdi VEĽKÉHO psíka!</div>
+    <div class="size-stage" id="sizeStage"></div>
+  </div>
+</div>
+
+<!-- CARS PANEL -->
+<div class="panel" id="panel-cars">
+  <div class="card-surface" style="align-items:stretch;">
+    <div class="instruction" style="align-self:center;">Klikni na psíka a pozri jeho prácu!</div>
+    <div class="stage" id="stage">
+      <div class="sun"></div>
+      <div id="actor-layer"></div>
+      <div class="road"></div>
+      <div class="placeholder-msg" id="placeholder"><div class="big-paw">🐾</div>Vyber si psíka dole!</div>
+    </div>
+    <div class="dock" id="dock"></div>
+  </div>
+</div>
+
+<!-- EMOTIONS PANEL -->
+<div class="panel" id="panel-emotions">
+  <div class="card-surface">
+    <div class="instruction">Klikni a zisti, ako sa psík cíti!</div>
+    <div class="big-stage"><div class="big-dog" id="bigFace"></div></div>
+    <div class="swatch-row" id="emotionRow"></div>
+  </div>
+</div>
+
+<!-- SORT PANEL -->
+<div class="panel" id="panel-sort">
+  <div class="card-surface">
+    <div class="instruction">Pomôž Šmudle triediť odpad! Klikni na vec a potom na správny kôš.</div>
+    <div class="sort-items" id="sortItems"></div>
+    <div class="sort-bins" id="sortBins"></div>
+    <div class="celebrate" id="sortCelebrate">Skvelé! Všetko je vytriedené! ♻️🎉</div>
+  </div>
+</div>
+
+<!-- WEATHER PANEL -->
+<div class="panel" id="panel-weather">
+  <div class="card-surface">
+    <div class="instruction">Aké je dnes počasie? Klikni a zisti!</div>
+    <div class="weather-stage" id="weatherStage">
+      <div class="big-dog" id="weatherDog"></div>
+      <div id="weatherParticles"></div>
+    </div>
+    <div class="swatch-row" id="weatherRow"></div>
+  </div>
+</div>
+
+<!-- MEMORY PANEL -->
+<div class="panel" id="panel-memo">
+  <div class="card-surface">
+    <div class="instruction">Nájdi rovnaké dvojice psíkov!</div>
+    <div class="memo-status" id="memoStatus">Nájdené páry: 0 / 6</div>
+    <div class="memo-grid" id="memoGrid"></div>
+    <div class="memo-celebrate" id="memoCelebrate">Všetky páry sú nájdené! Skvelá práca! 🎉</div>
+    <button class="replay-btn" id="memoReplay">🔄 Nová hra</button>
+  </div>
+</div>
+
+<!-- QUIZ PANEL -->
+<div class="panel" id="panel-quiz">
+  <div class="card-surface">
+    <div style="display:flex; align-items:center; gap:8px; justify-content:center; flex-wrap:wrap;">
+      <div class="quiz-q" id="quizQuestion">…</div>
+      <button class="quiz-replay" id="quizReplay" title="Zopakovať otázku">🔊</button>
+    </div>
+    <div class="quiz-options" id="quizOptions"></div>
+    <div class="quiz-feedback" id="quizFeedback"></div>
+  </div>
+</div>
+
+<footer>Vytvorené s láskou pre malých záchranárov 💛</footer>
+
+<script>
+/* Farby sú vždy v mužskom rode, pretože sa viažu na slovo "psík" (mužský rod) */
+const PUPS = [
+  { id:'fifo', name:'Fifo', job:'Hasič', hex:'#FF5A5F', coat:'#FF8A8E', spot:'#E8393E', vehicle:'firetruck', accessory:'helmet', sentence:'Fifo ide hasiť požiar!' },
+  { id:'bubo', name:'Bubo', job:'Policajt', hex:'#3E92CC', coat:'#7FC0EE', spot:'#2C6E9E', vehicle:'police', accessory:'cap', sentence:'Bubo strááži poriadok v meste!' },
+  { id:'miu', name:'Miu', job:'Záchranárka', hex:'#FF7FA6', coat:'#FFB6CE', spot:'#E85084', vehicle:'ambulance', accessory:'nurse', sentence:'Miu ide pomáhať chorým!' },
+  { id:'risko', name:'Riško', job:'Stavbár', hex:'#FFA630', coat:'#FFC670', spot:'#E08300', vehicle:'digger', accessory:'hardhat', sentence:'Riško stavia nový domček!' },
+  { id:'smudla', name:'Šmudla', job:'Ekológ', hex:'#4CAF7D', coat:'#84D6A6', spot:'#2E8A5B', vehicle:'recycle', accessory:'leaf', sentence:'Šmudla triedi odpad pre prírodu!' },
+  { id:'vlnka', name:'Vlnka', job:'Kapitánka', hex:'#9B7EDE', coat:'#C3AEF2', spot:'#7B57C9', vehicle:'boat', accessory:'sailor', sentence:'Vlnka pláva zachrániť kamaráta z vody!' },
+];
+
+/* farby v správnom mužskom tvare, lebo "psík" je mužský rod */
+const SK_COLOR_NAMES = { '#FF5A5F':'červený', '#3E92CC':'modrý', '#FF7FA6':'ružový', '#FFA630':'oranžový', '#4CAF7D':'zelený', '#9B7EDE':'fialový' };
+
+function accessorySVG(p){
+  switch(p.accessory){
+    case 'helmet': return `<path d="M40 26 Q60 6 80 26 Q80 34 60 34 Q40 34 40 26 Z" fill="#D9302E"/><rect x="34" y="26" width="52" height="6" rx="3" fill="#B8241F"/><circle cx="60" cy="19" r="4" fill="#FFD84D"/>`;
+    case 'cap': return `<path d="M38 25 Q60 8 82 25 L81 31 Q60 25 39 31 Z" fill="#274B75"/><rect x="34" y="29" width="52" height="6" rx="3" fill="#1c3a5e"/><circle cx="60" cy="18" r="3.4" fill="#FFD84D"/>`;
+    case 'nurse': return `<path d="M42 22 Q60 9 78 22 Q78 30 60 28 Q42 30 42 22 Z" fill="#fff" stroke="#f0c4d3" stroke-width="1.5"/><rect x="56" y="13" width="8" height="14" fill="#FF7FA6"/><rect x="51" y="18" width="18" height="4" fill="#FF7FA6"/>`;
+    case 'hardhat': return `<path d="M38 28 Q60 6 82 28 Q82 33 60 33 Q38 33 38 28 Z" fill="#FFC93C"/><rect x="46" y="26" width="28" height="6" rx="3" fill="#E0A800"/>`;
+    case 'leaf': return `<path d="M40 27 Q60 32 80 27" stroke="#2E8A5B" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M56 19 Q66 9 76 18 Q66 25 56 19 Z" fill="#4CAF7D"/>`;
+    case 'sailor': return `<path d="M40 26 Q60 11 80 26 Q78 32 60 30 Q42 32 40 26 Z" fill="#fff" stroke="#d8d8e6" stroke-width="1.5"/><rect x="34" y="29" width="52" height="5" rx="2.5" fill="#274B75"/><circle cx="60" cy="19" r="3" fill="#274B75"/>`;
+    default: return '';
+  }
+}
+
+function dogSVG(p){
+  return `<svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="60" cy="88" rx="30" ry="6" fill="rgba(0,0,0,0.12)"/>
+    <path d="M30 55 Q20 40 32 30 Q40 20 60 22 Q80 20 88 30 Q100 40 90 55 Q95 70 78 78 Q60 86 42 78 Q25 70 30 55 Z" fill="${p.coat}"/>
+    <ellipse cx="45" cy="46" rx="9" ry="11" fill="${p.spot}" opacity="0.55"/>
+    <ellipse cx="80" cy="62" rx="10" ry="8" fill="${p.spot}" opacity="0.55"/>
+    <path d="M32 32 Q20 18 26 8 Q36 6 38 26 Z" fill="${p.spot}"/>
+    <path d="M88 32 Q100 18 94 8 Q84 6 82 26 Z" fill="${p.spot}"/>
+    <ellipse cx="60" cy="52" rx="26" ry="22" fill="${p.coat}"/>
+    <ellipse cx="60" cy="60" rx="13" ry="10" fill="#fff"/>
+    <circle cx="50" cy="46" r="5" fill="#2E3140"/><circle cx="70" cy="46" r="5" fill="#2E3140"/>
+    <circle cx="51.5" cy="44.5" r="1.6" fill="#fff"/><circle cx="71.5" cy="44.5" r="1.6" fill="#fff"/>
+    <ellipse cx="60" cy="58" rx="5" ry="3.5" fill="#2E3140"/>
+    <path d="M55 63 Q60 68 65 63" stroke="#2E3140" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <circle cx="42" cy="58" r="4" fill="#FFB9C6" opacity="0.7"/><circle cx="78" cy="58" r="4" fill="#FFB9C6" opacity="0.7"/>
+    ${accessorySVG(p)}
+  </svg>`;
+}
+function vehicleSVG(p){
+  const body = p.hex;
+  const common = `<circle cx="26" cy="80" r="13" fill="#2E3140"/><circle cx="26" cy="80" r="5.5" fill="#aab0c2"/>
+    <circle cx="104" cy="80" r="13" fill="#2E3140"/><circle cx="104" cy="80" r="5.5" fill="#aab0c2"/>`;
+  let extra='';
+  if(p.vehicle==='firetruck'){ extra=`<rect x="16" y="34" width="98" height="34" rx="8" fill="${body}"/><rect x="16" y="20" width="46" height="20" rx="6" fill="${body}"/><rect x="24" y="24" width="16" height="12" rx="2" fill="#cdeeff"/><rect x="20" y="52" width="94" height="6" fill="#fff" opacity="0.85"/><circle cx="100" cy="30" r="9" fill="#FFD84D"/>`; }
+  else if(p.vehicle==='police'){ extra=`<rect x="14" y="40" width="100" height="28" rx="10" fill="${body}"/><rect x="24" y="20" width="66" height="24" rx="8" fill="${body}"/><rect x="30" y="24" width="22" height="14" rx="2" fill="#cdeeff"/><rect x="56" y="24" width="22" height="14" rx="2" fill="#cdeeff"/><rect x="45" y="12" width="26" height="10" rx="3" fill="#3E92CC"/><circle cx="52" cy="17" r="3.4" fill="#FF5A5F"/><circle cx="64" cy="17" r="3.4" fill="#4C8DFF"/>`; }
+  else if(p.vehicle==='ambulance'){ extra=`<rect x="14" y="36" width="100" height="32" rx="8" fill="#fff"/><rect x="14" y="36" width="40" height="32" rx="8" fill="${body}"/><rect x="66" y="42" width="34" height="20" rx="3" fill="#cdeeff"/><rect x="80" y="46" width="4" height="12" fill="${body}"/><rect x="75" y="51" width="14" height="4" fill="${body}"/><circle cx="34" cy="24" r="8" fill="#FF5A5F"/>`; }
+  else if(p.vehicle==='digger'){ extra=`<rect x="20" y="44" width="70" height="26" rx="6" fill="${body}"/><rect x="30" y="26" width="30" height="20" rx="4" fill="${body}"/><rect x="34" y="30" width="18" height="12" rx="2" fill="#cdeeff"/><path d="M90 40 L112 30 L118 38 L100 52 Z" fill="#8a8f9e"/><path d="M108 26 Q120 26 116 40 L100 44 Z" fill="#8a8f9e"/>`; }
+  else if(p.vehicle==='recycle'){ extra=`<rect x="16" y="30" width="100" height="38" rx="6" fill="${body}"/><rect x="20" y="16" width="40" height="20" rx="6" fill="${body}"/><rect x="26" y="20" width="16" height="12" rx="2" fill="#cdeeff"/><rect x="66" y="38" width="42" height="24" rx="4" fill="#fff" opacity="0.85"/><text x="87" y="56" font-size="18" text-anchor="middle" fill="${body}">♻</text>`; }
+  else if(p.vehicle==='boat'){ extra=`<path d="M14 60 Q60 78 116 60 L104 68 Q60 80 24 68 Z" fill="${body}"/><rect x="50" y="24" width="8" height="36" fill="#8a6a4a"/><path d="M58 26 L92 46 L58 50 Z" fill="#fff"/><rect x="30" y="46" width="40" height="16" rx="4" fill="${body}"/>`; }
+  const wheels = (p.vehicle==='boat') ? '' : common;
+  return `<svg viewBox="0 0 130 100" xmlns="http://www.w3.org/2000/svg">${extra}${wheels}</svg>`;
+}
+
+/* ---- SPEECH: teplejší, jemnejší hlas ---- */
+let cachedVoices = [];
+function loadVoices(){ cachedVoices = ('speechSynthesis' in window) ? window.speechSynthesis.getVoices() : []; }
+if('speechSynthesis' in window){ loadVoices(); window.speechSynthesis.onvoiceschanged = loadVoices; }
+function pickVoice(){
+  if(!cachedVoices.length) return null;
+  const sk = cachedVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith('sk'));
+  const pool = sk.length ? sk : cachedVoices;
+  const gentle = pool.find(v => /female|žena|zuzana|laura|kristina|hana/i.test(v.name));
+  return gentle || pool[0] || null;
+}
+function speak(text){
+  try{
+    if(!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const v = pickVoice();
+    if(v) u.voice = v;
+    u.lang = (v && v.lang) || 'sk-SK';
+    u.rate = 0.88; u.pitch = 1.35; u.volume = 1;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function honk(){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type='triangle';
+    o.frequency.setValueAtTime(520, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(720, ctx.currentTime+0.12);
+    g.gain.setValueAtTime(0.15, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.25);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+0.26);
+  }catch(e){}
+}
+function confettiBurst(container, hex){
+  const colors = [hex, '#FFD84D', '#fff', '#6FCBFF'];
+  for(let i=0;i<16;i++){
+    const c = document.createElement('div');
+    c.className='confetti-piece';
+    c.style.left = (40 + Math.random()*40) + '%';
+    c.style.background = colors[i % colors.length];
+    c.style.borderRadius = Math.random()>0.5 ? '50%' : '2px';
+    container.appendChild(c);
+    const dx = (Math.random()-0.5)*200, dy = 50+Math.random()*90, rot=(Math.random()-0.5)*360;
+    c.animate([{transform:'translate(0,0) rotate(0)',opacity:1},{transform:`translate(${dx}px, ${dy}px) rotate(${rot}deg)`,opacity:0}],{duration:900+Math.random()*400, easing:'ease-out'});
+    setTimeout(()=>c.remove(),1400);
+  }
+}
+
+/* ---- TAB SWITCHING ---- */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    if(btn.dataset.tab === 'quiz') renderQuestion();
+    if(btn.dataset.tab === 'memo' && !memoInitialized){ renderMemo(); memoInitialized = true; }
+  });
+});
+
+/* ---- COLORS TAB ---- */
+const bigDog = document.getElementById('bigDog');
+const colorLabel = document.getElementById('colorLabel');
+const swatchRow = document.getElementById('swatchRow');
+bigDog.insertAdjacentHTML('beforeend', dogSVG(PUPS[0]));
+PUPS.forEach(p=>{
+  const sw = document.createElement('button');
+  sw.className='swatch'; sw.style.background = p.hex;
+  sw.addEventListener('click', ()=>{
+    document.querySelectorAll('#swatchRow .swatch').forEach(s=>s.classList.remove('picked'));
+    sw.classList.add('picked');
+    bigDog.querySelector('svg').remove();
+    bigDog.insertAdjacentHTML('afterbegin', dogSVG(p));
+    colorLabel.style.background = p.hex;
+    const colorWord = SK_COLOR_NAMES[p.hex];
+    colorLabel.textContent = `${p.name} — ${colorWord} psík`;
+    colorLabel.classList.add('show');
+    bigDog.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],{duration:500,easing:'ease-out'});
+    speak(`Toto je ${p.name}. ${p.name} je ${colorWord} psík.`);
+  });
+  swatchRow.appendChild(sw);
+});
+
+/* ---- SHAPES TAB ---- */
+const SHAPES = [
+  { id:'circle', name:'kruh', fact:'Kolesá áut sú okrúhle ako kruh!' },
+  { id:'square', name:'štvorec', fact:'Okienko na aute je štvorec!' },
+  { id:'triangle', name:'trojuholník', fact:'Strecha domčeka je trojuholník!' },
+  { id:'star', name:'hviezda', fact:'Na oblohe v noci svietia hviezdy!' },
+  { id:'heart', name:'srdce', fact:'Srdce znamená, že máš niekoho rád!' },
+];
+const SHAPE_COLORS = ['#FF5A5F','#3E92CC','#FF7FA6','#FFA630','#4CAF7D','#9B7EDE'];
+function shapeSVG(id, color){
+  switch(id){
+    case 'circle': return `<circle cx="60" cy="60" r="46" fill="${color}"/>`;
+    case 'square': return `<rect x="16" y="16" width="88" height="88" rx="10" fill="${color}"/>`;
+    case 'triangle': return `<polygon points="60,10 110,105 10,105" fill="${color}"/>`;
+    case 'star': return `<polygon points="60,8 73,45 112,45 80,68 92,105 60,82 28,105 40,68 8,45 47,45" fill="${color}"/>`;
+    case 'heart': return `<path d="M60 100 C10 65 10 25 35 15 C50 8 60 25 60 25 C60 25 70 8 85 15 C110 25 110 65 60 100 Z" fill="${color}"/>`;
+    default: return '';
+  }
+}
+const bigShapeEl = document.getElementById('bigShape');
+const shapeFactEl = document.getElementById('shapeFact');
+const shapeRow = document.getElementById('shapeRow');
+bigShapeEl.innerHTML = `<svg viewBox="0 0 120 120">${shapeSVG(SHAPES[0].id, SHAPE_COLORS[0])}</svg>`;
+SHAPES.forEach((s,i)=>{
+  const btn = document.createElement('button');
+  btn.className='swatch shape-btn';
+  btn.innerHTML = `<svg viewBox="0 0 120 120" width="70%" height="70%">${shapeSVG(s.id, SHAPE_COLORS[i % SHAPE_COLORS.length])}</svg>`;
+  btn.addEventListener('click', ()=>{
+    const color = SHAPE_COLORS[i % SHAPE_COLORS.length];
+    bigShapeEl.innerHTML = `<svg viewBox="0 0 120 120">${shapeSVG(s.id, color)}</svg>`;
+    bigShapeEl.animate([{transform:'scale(1) rotate(0)'},{transform:'scale(1.15) rotate(8deg)'},{transform:'scale(1) rotate(0)'}],{duration:500,easing:'ease-out'});
+    shapeFactEl.textContent = s.fact;
+    speak(`Toto je ${s.name}. ${s.fact}`);
+  });
+  shapeRow.appendChild(btn);
+});
+
+/* ---- COUNT TAB ---- */
+const pawRow = document.getElementById('pawRow');
+const countDisplay = document.getElementById('countDisplay');
+const celebrateEl = document.getElementById('celebrate');
+const NUM_WORDS = ['nula','jeden','dva','tri','štyri','päť','šesť'];
+let countValue = 0;
+function buildPaws(){
+  pawRow.innerHTML=''; countValue = 0; countDisplay.textContent = '0'; celebrateEl.classList.remove('show');
+  PUPS.forEach(p=>{
+    const b = document.createElement('button');
+    b.className='paw-btn'; b.textContent = '🐾'; b.dataset.done = 'false';
+    b.addEventListener('click', ()=>{
+      if(b.dataset.done === 'true') return;
+      b.dataset.done = 'true'; countValue++;
+      countDisplay.textContent = String(countValue);
+      b.style.setProperty('--accent', p.hex);
+      b.classList.add('done'); b.innerHTML = dogSVG(p);
+      b.animate([{transform:'scale(1)'},{transform:'scale(1.25)'},{transform:'scale(1)'}],{duration:400,easing:'ease-out'});
+      speak(NUM_WORDS[countValue]);
+      if(countValue === PUPS.length){
+        setTimeout(()=>{
+          celebrateEl.classList.add('show');
+          confettiBurst(document.getElementById('panel-count').querySelector('.card-surface'), '#FFD84D');
+          speak('Hurá! Šesť psíkov je spočítaných! Skvelá práca!');
+        }, 350);
+      }
+    });
+    pawRow.appendChild(b);
+  });
+}
+buildPaws();
+document.getElementById('replayBtn').addEventListener('click', buildPaws);
+
+/* ---- SIZE TAB ---- */
+const sizeStage = document.getElementById('sizeStage');
+const sizePromptEl = document.getElementById('sizePrompt');
+let sizeTargetBig = true;
+function newSizeRound(){
+  sizeStage.innerHTML = '';
+  let pupA = PUPS[Math.floor(Math.random()*PUPS.length)];
+  let pupB = PUPS[Math.floor(Math.random()*PUPS.length)];
+  while(pupB.id === pupA.id){ pupB = PUPS[Math.floor(Math.random()*PUPS.length)]; }
+  sizeTargetBig = Math.random() < 0.5;
+  sizePromptEl.textContent = sizeTargetBig ? 'Nájdi VEĽKÉHO psíka!' : 'Nájdi MALÉHO psíka!';
+  speak(sizePromptEl.textContent);
+  const bigFirst = Math.random() < 0.5;
+  const pairs = [pupA, pupB];
+  const sizes = bigFirst ? [148,68] : [68,148];
+  pairs.forEach((p, idx)=>{
+    const isBig = sizes[idx] === 148;
+    const btn = document.createElement('button');
+    btn.className = 'size-dog-btn';
+    btn.style.width = sizes[idx]+'px';
+    btn.style.height = Math.round(sizes[idx]*0.86)+'px';
+    btn.innerHTML = dogSVG(p);
+    btn.addEventListener('click', ()=>{
+      const correct = (isBig === sizeTargetBig);
+      if(correct){
+        btn.animate([{transform:'scale(1)'},{transform:'scale(1.2)'},{transform:'scale(1)'}],{duration:400});
+        confettiBurst(document.getElementById('panel-size').querySelector('.card-surface'), p.hex);
+        speak('Správne! Výborne!');
+        setTimeout(newSizeRound, 1400);
+      } else {
+        btn.animate([{transform:'translateX(0)'},{transform:'translateX(-8px)'},{transform:'translateX(8px)'},{transform:'translateX(0)'}],{duration:300});
+        speak('Skús to ešte raz!');
+      }
+    });
+    sizeStage.appendChild(btn);
+  });
+}
+newSizeRound();
+
+/* ---- CARS TAB ---- */
+const dock = document.getElementById('dock');
+const actorLayer = document.getElementById('actor-layer');
+const placeholder = document.getElementById('placeholder');
+let animating = false;
+PUPS.forEach(p=>{
+  const btn = document.createElement('button');
+  btn.className='pup-btn'; btn.style.setProperty('--accent', p.hex);
+  btn.innerHTML = `<div class="pup-avatar">${dogSVG(p)}</div><div class="pup-name" style="color:${p.hex}">${p.name}</div><div class="pup-job">${p.job}</div>`;
+  btn.addEventListener('click', ()=> playScene(p, btn));
+  dock.appendChild(btn);
+});
+function playScene(p, btn){
+  if(animating) return; animating = true;
+  document.querySelectorAll('.pup-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected'); placeholder.style.display='none'; actorLayer.innerHTML='';
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const dogEl = document.createElement('div');
+  dogEl.style.cssText='position:absolute;width:56px;height:46px;left:24px;bottom:52px;';
+  dogEl.innerHTML = dogSVG(p); actorLayer.appendChild(dogEl);
+  const vEl = document.createElement('div');
+  vEl.style.cssText='position:absolute;width:112px;height:78px;left:-130px;bottom:38px;';
+  vEl.innerHTML = vehicleSVG(p); actorLayer.appendChild(vEl);
+  const dur1 = reduced ? 10 : 650;
+  dogEl.animate([{left:'24px',transform:'translateY(0) scale(1)'},{left:'110px',transform:'translateY(-8px) scale(1.05)'},{left:'190px',transform:'translateY(0) scale(1)'}],{duration:dur1,easing:'ease-in-out',fill:'forwards'});
+  setTimeout(()=>{
+    honk();
+    const dur2 = reduced ? 10 : 700;
+    vEl.animate([{left:'-130px'},{left:'160px'}],{duration:dur2,easing:'cubic-bezier(.2,.8,.3,1)',fill:'forwards'});
+    setTimeout(()=>{
+      const dur3 = reduced ? 10 : 450;
+      dogEl.animate([{left:'190px',transform:'translateY(0) scale(1)'},{left:'220px',transform:'translateY(-20px) scale(1.15)'},{left:'232px',transform:'translateY(-4px) scale(0.9)'}],{duration:dur3,easing:'ease-out',fill:'forwards'});
+      setTimeout(()=>{
+        confettiBurst(actorLayer, p.hex);
+        dogEl.style.display='none';
+        speak(p.sentence);
+        const dur4 = reduced ? 10 : 1200;
+        vEl.animate([{left:'232px',transform:'translateY(0)'},{left:'70vw',transform:'translateY(-4px)'},{left:'110vw',transform:'translateY(0)'}],{duration:dur4,easing:'ease-in',fill:'forwards'});
+        setTimeout(()=>{ animating=false; }, dur4);
+      }, dur3);
+    }, dur2);
+  }, dur1);
+}
+
+/* ---- EMOTIONS TAB ---- */
+const EMOTIONS = [
+  { id:'happy', label:'šťastný', emoji:'😊' },
+  { id:'sad', label:'smutný', emoji:'😢' },
+  { id:'surprised', label:'prekvapený', emoji:'😲' },
+  { id:'sleepy', label:'ospalý', emoji:'😴' },
+];
+function emotionFaceSVG(p, emotion){
+  let eyes, mouth, extra='';
+  switch(emotion){
+    case 'happy':
+      eyes = `<path d="M45 46 Q50 42 55 46" stroke="#2E3140" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M65 46 Q70 42 75 46" stroke="#2E3140" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+      mouth = `<path d="M48 60 Q60 72 72 60" stroke="#2E3140" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+      break;
+    case 'sad':
+      eyes = `<circle cx="50" cy="46" r="4.5" fill="#2E3140"/><circle cx="70" cy="46" r="4.5" fill="#2E3140"/><path d="M42 40 Q50 36 56 40" stroke="#2E3140" stroke-width="2" fill="none"/><path d="M64 40 Q70 36 78 40" stroke="#2E3140" stroke-width="2" fill="none"/>`;
+      mouth = `<path d="M48 66 Q60 56 72 66" stroke="#2E3140" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+      extra = `<ellipse cx="47" cy="55" rx="3" ry="5" fill="#8FD3FF" opacity="0.8"/>`;
+      break;
+    case 'surprised':
+      eyes = `<circle cx="50" cy="46" r="6" fill="#2E3140"/><circle cx="70" cy="46" r="6" fill="#2E3140"/><circle cx="51.5" cy="44" r="2" fill="#fff"/><circle cx="71.5" cy="44" r="2" fill="#fff"/>`;
+      mouth = `<ellipse cx="60" cy="64" rx="7" ry="9" fill="#2E3140"/>`;
+      break;
+    case 'sleepy':
+      eyes = `<path d="M44 46 L56 46" stroke="#2E3140" stroke-width="3" stroke-linecap="round"/><path d="M64 46 L76 46" stroke="#2E3140" stroke-width="3" stroke-linecap="round"/>`;
+      mouth = `<circle cx="60" cy="62" r="3.4" fill="#2E3140"/>`;
+      extra = `<text x="86" y="30" font-size="16" fill="#9B7EDE">z</text><text x="97" y="19" font-size="12" fill="#9B7EDE">z</text>`;
+      break;
+  }
+  return `<svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="60" cy="52" rx="40" ry="36" fill="${p.coat}"/>
+    <path d="M20 40 Q10 22 18 8 Q30 6 32 30 Z" fill="${p.spot}"/>
+    <path d="M100 40 Q110 22 102 8 Q90 6 88 30 Z" fill="${p.spot}"/>
+    <ellipse cx="60" cy="66" rx="16" ry="12" fill="#fff"/>
+    ${eyes}
+    ${mouth}
+    <circle cx="38" cy="60" r="4" fill="#FFB9C6" opacity="0.6"/><circle cx="82" cy="60" r="4" fill="#FFB9C6" opacity="0.6"/>
+    ${extra}
+  </svg>`;
+}
+const bigFaceEl = document.getElementById('bigFace');
+const emotionRow = document.getElementById('emotionRow');
+let emotionPupIndex = 0;
+bigFaceEl.innerHTML = emotionFaceSVG(PUPS[0], 'happy');
+EMOTIONS.forEach(e=>{
+  const btn = document.createElement('button');
+  btn.className='swatch shape-btn';
+  btn.style.fontSize = '24px';
+  btn.textContent = e.emoji;
+  btn.addEventListener('click', ()=>{
+    const p = PUPS[emotionPupIndex % PUPS.length];
+    emotionPupIndex++;
+    bigFaceEl.innerHTML = emotionFaceSVG(p, e.id);
+    bigFaceEl.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],{duration:450,easing:'ease-out'});
+    speak(`${p.name} je ${e.label}.`);
+  });
+  emotionRow.appendChild(btn);
+});
+
+/* ---- SORT TAB ---- */
+const SORT_ITEMS = [
+  { id:'newspaper', icon:'📰', bin:'paper' },
+  { id:'box', icon:'📦', bin:'paper' },
+  { id:'bottle', icon:'🍾', bin:'glass' },
+  { id:'jar', icon:'🫙', bin:'glass' },
+  { id:'plasticbottle', icon:'🧴', bin:'plastic' },
+  { id:'bag', icon:'🛍️', bin:'plastic' },
+];
+const BINS = [
+  { id:'paper', label:'Papier', color:'#3E92CC' },
+  { id:'plastic', label:'Plast', color:'#FFD84D' },
+  { id:'glass', label:'Sklo', color:'#4CAF7D' },
+];
+let sortItemsState = [];
+let sortSelected = null;
+let sortDoneCount = 0;
+function renderSort(){
+  sortItemsState = SORT_ITEMS.map(i=>({...i, done:false}));
+  sortSelected = null; sortDoneCount = 0;
+  document.getElementById('sortCelebrate').classList.remove('show');
+  const itemsEl = document.getElementById('sortItems');
+  itemsEl.innerHTML='';
+  sortItemsState.forEach(item=>{
+    const b = document.createElement('button');
+    b.className='sort-item'; b.textContent = item.icon; b.dataset.id = item.id;
+    b.addEventListener('click', ()=>{
+      if(item.done) return;
+      document.querySelectorAll('.sort-item').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+      sortSelected = item.id;
+    });
+    itemsEl.appendChild(b);
+  });
+  const binsEl = document.getElementById('sortBins');
+  if(!binsEl.dataset.built){
+    BINS.forEach(bin=>{
+      const bb = document.createElement('button');
+      bb.className='sort-bin'; bb.style.background = bin.color;
+      bb.innerHTML = `<span style="font-size:20px;">🗑️</span>${bin.label}`;
+      bb.addEventListener('click', ()=> trySort(bin.id, bb));
+      binsEl.appendChild(bb);
+    });
+    binsEl.dataset.built = 'true';
+  }
+}
+function trySort(binId, binEl){
+  if(!sortSelected){ speak('Najprv vyber vec!'); return; }
+  const item = sortItemsState.find(i=>i.id===sortSelected);
+  const itemEl = document.querySelector(`.sort-item[data-id="${sortSelected}"]`);
+  if(item.bin === binId){
+    item.done = true;
+    itemEl.classList.remove('selected'); itemEl.classList.add('done');
+    binEl.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],{duration:350});
+    confettiBurst(document.getElementById('panel-sort').querySelector('.card-surface'), '#4CAF7D');
+    speak('Správne! Skvelé triedenie!');
+    sortDoneCount++; sortSelected = null;
+    if(sortDoneCount === sortItemsState.length){
+      setTimeout(()=>{
+        document.getElementById('sortCelebrate').classList.add('show');
+        speak('Všetko je vytriedené! Šmudla ti ďakuje!');
+      }, 400);
+    }
+  } else {
+    binEl.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],{duration:300});
+    speak('Skús iný kôš!');
+  }
+}
+renderSort();
+
+/* ---- WEATHER TAB ---- */
+const WEATHERS = [
+  { id:'sunny', label:'Slnečno', icon:'☀️', sentence:'Dnes svieti slnko, je krásne teplo!' },
+  { id:'rainy', label:'Prší', icon:'🌧️', sentence:'Vonku prší, treba si vziať dáždnik!' },
+  { id:'snowy', label:'Sneží', icon:'❄️', sentence:'Sneží! Poď sa hrať von na snehu!' },
+  { id:'windy', label:'Veterno', icon:'💨', sentence:'Fúka silný vietor!' },
+];
+function weatherAccessorySVG(id){
+  switch(id){
+    case 'sunny': return `<ellipse cx="45" cy="42" rx="10" ry="6" fill="#2E3140"/><ellipse cx="75" cy="42" rx="10" ry="6" fill="#2E3140"/><rect x="35" y="40" width="50" height="4" fill="#2E3140"/>`;
+    case 'rainy': return `<path d="M30 20 Q60 0 90 20 L90 26 Q60 14 30 26 Z" fill="#3E92CC"/><rect x="56" y="18" width="8" height="30" fill="#274B75"/>`;
+    case 'snowy': return `<path d="M35 20 Q60 4 85 20 Q85 30 60 28 Q35 30 35 20 Z" fill="#fff" stroke="#cfe9ff" stroke-width="1.5"/>`;
+    case 'windy': return `<path d="M20 50 Q10 46 20 42" stroke="#9BBFE0" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M95 55 Q108 50 96 45" stroke="#9BBFE0" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+    default: return '';
+  }
+}
+const weatherDogEl = document.getElementById('weatherDog');
+const weatherParticlesEl = document.getElementById('weatherParticles');
+const weatherRow = document.getElementById('weatherRow');
+let weatherPupIndex = 0;
+function renderWeatherDog(weatherId){
+  const p = PUPS[weatherPupIndex % PUPS.length];
+  weatherPupIndex++;
+  weatherDogEl.innerHTML = dogSVG(p).replace('</svg>', weatherAccessorySVG(weatherId) + '</svg>');
+  weatherDogEl.animate([{transform:'scale(1)'},{transform:'scale(1.1)'},{transform:'scale(1)'}],{duration:450});
+}
+function spawnParticles(weatherId){
+  weatherParticlesEl.innerHTML = '';
+  if(weatherId === 'rainy' || weatherId === 'snowy'){
+    const count = 14;
+    for(let i=0;i<count;i++){
+      const el = document.createElement('div');
+      el.className='weather-particle';
+      el.style.left = Math.random()*100+'%';
+      el.textContent = weatherId === 'rainy' ? '💧' : '❄️';
+      el.style.fontSize = (weatherId==='rainy'? 12: 14)+'px';
+      weatherParticlesEl.appendChild(el);
+      const dur = weatherId==='rainy' ? (600+Math.random()*300) : (1800+Math.random()*800);
+      const delay = Math.random()*400;
+      el.animate([{transform:'translateY(-10px)', opacity:1},{transform:'translateY(170px)', opacity:0}],{duration:dur, delay:delay, easing:'linear', fill:'forwards'});
+      setTimeout(()=>el.remove(), dur+delay+300);
+    }
+  }
+}
+WEATHERS.forEach(w=>{
+  const btn = document.createElement('button');
+  btn.className='swatch shape-btn';
+  btn.style.fontSize='24px';
+  btn.textContent = w.icon;
+  btn.addEventListener('click', ()=>{
+    renderWeatherDog(w.id);
+    spawnParticles(w.id);
+    speak(w.sentence);
+  });
+  weatherRow.appendChild(btn);
+});
+renderWeatherDog('sunny');
+
+/* ---- MEMORY (PEXESO) TAB ---- */
+let memoInitialized = false;
+let memoState = { cards: [], flipped: [], matchedCount:0, lock:false };
+const memoGrid = document.getElementById('memoGrid');
+const memoStatus = document.getElementById('memoStatus');
+const memoCelebrateEl = document.getElementById('memoCelebrate');
+function buildMemoDeck(){
+  const deck = [];
+  PUPS.forEach(p=>{ deck.push({pupId:p.id}); deck.push({pupId:p.id}); });
+  for(let i=deck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]]; }
+  return deck.map((d,i)=>({ ...d, uid:i, matched:false }));
+}
+function renderMemo(){
+  memoState = { cards: buildMemoDeck(), flipped: [], matchedCount:0, lock:false };
+  memoGrid.innerHTML = '';
+  memoCelebrateEl.classList.remove('show');
+  memoStatus.textContent = `Nájdené páry: 0 / ${PUPS.length}`;
+  memoState.cards.forEach(card=>{
+    const p = PUPS.find(x=>x.id===card.pupId);
+    const el = document.createElement('div');
+    el.className='memo-card'; el.dataset.uid = card.uid;
+    el.innerHTML = `<div class="memo-card-inner">
+        <div class="memo-face memo-back">🐾</div>
+        <div class="memo-face memo-front">${dogSVG(p)}</div>
+      </div>`;
+    el.addEventListener('click', ()=> flipMemoCard(card.uid, el));
+    memoGrid.appendChild(el);
+  });
+}
+function flipMemoCard(uid, el){
+  if(memoState.lock) return;
+  const card = memoState.cards.find(c=>c.uid===uid);
+  if(!card || card.matched || memoState.flipped.find(f=>f.uid===uid)) return;
+  el.classList.add('flipped');
+  memoState.flipped.push({uid, el, pupId: card.pupId});
+  if(memoState.flipped.length === 2){
+    memoState.lock = true;
+    const [a,b] = memoState.flipped;
+    if(a.pupId === b.pupId){
+      const p = PUPS.find(x=>x.id===a.pupId);
+      setTimeout(()=>{
+        a.el.classList.add('matched'); b.el.classList.add('matched');
+        memoState.cards.find(c=>c.uid===a.uid).matched = true;
+        memoState.cards.find(c=>c.uid===b.uid).matched = true;
+        confettiBurst(document.getElementById('panel-memo').querySelector('.card-surface'), p.hex);
+        speak('Nájdený pár! Skvelé!');
+        memoState.matchedCount++;
+        memoStatus.textContent = `Nájdené páry: ${memoState.matchedCount} / ${PUPS.length}`;
+        memoState.flipped = []; memoState.lock = false;
+        if(memoState.matchedCount === PUPS.length){
+          setTimeout(()=>{
+            memoCelebrateEl.classList.add('show');
+            speak('Všetky páry sú nájdené! Skvelá práca!');
+            confettiBurst(document.getElementById('panel-memo').querySelector('.card-surface'), '#FFD84D');
+          }, 400);
+        }
+      }, 500);
+    } else {
+      setTimeout(()=>{ speak('Skús to ešte raz!'); }, 200);
+      setTimeout(()=>{
+        a.el.classList.remove('flipped'); b.el.classList.remove('flipped');
+        memoState.flipped = []; memoState.lock = false;
+      }, 900);
+    }
+  }
+}
+document.getElementById('memoReplay').addEventListener('click', renderMemo);
+
+/* ---- QUIZ TAB ---- */
+const quizQuestionEl = document.getElementById('quizQuestion');
+const quizOptionsEl = document.getElementById('quizOptions');
+const quizFeedbackEl = document.getElementById('quizFeedback');
+let currentQuestion = null;
+function randomOtherPups(exclude, n){ return PUPS.filter(p => p.id !== exclude.id).sort(()=>Math.random()-0.5).slice(0,n); }
+function buildQuestion(){
+  const type = Math.random() < 0.5 ? 'color' : 'job';
+  const target = PUPS[Math.floor(Math.random()*PUPS.length)];
+  const options = [target, ...randomOtherPups(target,2)].sort(()=>Math.random()-0.5);
+  const questionText = (type === 'color')
+    ? `Ktorý psík je ${SK_COLOR_NAMES[target.hex]}?`
+    : `Kto je ${target.job.toLowerCase()}?`;
+  return { target, options, questionText };
+}
+function renderQuestion(){
+  currentQuestion = buildQuestion();
+  quizFeedbackEl.textContent = ''; quizFeedbackEl.className = 'quiz-feedback';
+  quizQuestionEl.textContent = currentQuestion.questionText;
+  quizOptionsEl.innerHTML = '';
+  currentQuestion.options.forEach(p=>{
+    const b = document.createElement('button');
+    b.className = 'quiz-opt'; b.innerHTML = dogSVG(p);
+    b.addEventListener('click', ()=> checkAnswer(p, b));
+    quizOptionsEl.appendChild(b);
+  });
+  speak(currentQuestion.questionText);
+}
+function checkAnswer(picked, btn){
+  if(picked.id === currentQuestion.target.id){
+    btn.classList.add('correct');
+    quizFeedbackEl.textContent = 'Správne! Výborne! 🎉';
+    quizFeedbackEl.className = 'quiz-feedback show good';
+    confettiBurst(document.getElementById('panel-quiz').querySelector('.card-surface'), currentQuestion.target.hex);
+    speak('Správne! Výborne!');
+    document.querySelectorAll('.quiz-opt').forEach(o=>o.disabled=true);
+    setTimeout(renderQuestion, 1900);
+  } else {
+    btn.classList.add('wrong');
+    btn.animate([{transform:'translateX(0)'},{transform:'translateX(-8px)'},{transform:'translateX(8px)'},{transform:'translateX(0)'}],{duration:300});
+    quizFeedbackEl.textContent = 'Skús to ešte raz, ty to dáš!';
+    quizFeedbackEl.className = 'quiz-feedback show';
+    speak('Skús to ešte raz, ty to dáš!');
+    setTimeout(()=> btn.classList.remove('wrong'), 500);
+  }
+}
+document.getElementById('quizReplay').addEventListener('click', ()=>{ if(currentQuestion) speak(currentQuestion.questionText); });
+</script>
+</body>
+</html>

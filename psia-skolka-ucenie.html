@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Labková Škôlka</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#24304A; --muted:#56617D; --card:#FFFFFF;
+    --sh:0 6px 0 rgba(20,40,80,.16); --sh-press:0 2px 0 rgba(20,40,80,.16);
+    --yellow:#FFD84D; --good:#2E9E55; --bad:#E5484D;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:'Fredoka','Comic Sans MS','Trebuchet MS',sans-serif; color:var(--ink);
+    min-height:100vh; min-height:100dvh; overflow-x:hidden; position:relative;
+    background:linear-gradient(180deg,#5EC4FF 0%,#B9EAFF 62%,#8ED46B 62%,#6DBE4E 100%) fixed;
+    -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none;
+  }
+  button{ font-family:inherit; color:inherit; border:none; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+  svg{ display:block; }
+
+  .cloud{ position:fixed; width:110px; height:38px; background:#fff; border-radius:50px; opacity:.85; animation:drift 50s linear infinite; z-index:0; pointer-events:none; }
+  .cloud::before,.cloud::after{ content:''; position:absolute; background:#fff; border-radius:50%; }
+  .cloud::before{ width:54px; height:54px; top:-27px; left:12px; }
+  .cloud::after{ width:38px; height:38px; top:-17px; left:56px; }
+  .cloud.c1{ left:-160px; top:6%; }
+  .cloud.c2{ left:-160px; top:20%; transform:scale(.7); animation-delay:-22s; }
+  @keyframes drift{ from{ transform:translateX(0); } to{ transform:translateX(170vw); } }
+
+  .screen{ display:none; position:relative; z-index:1; max-width:980px; margin:0 auto; padding:10px 16px 30px; }
+  .screen.active{ display:block; }
+
+  /* ---------- HOME ---------- */
+  .home-head{ text-align:center; padding-top:6px; }
+  h1{
+    margin:4px 0 0; font-size:clamp(26px,7vw,46px); font-weight:700; letter-spacing:.5px;
+    color:#fff; text-shadow:0 3px 0 #1E6FD9, 0 6px 0 rgba(0,0,0,.15);
+    animation:bob 3.2s ease-in-out infinite;
+  }
+  @keyframes bob{ 0%,100%{ transform:translateY(0) rotate(-1deg); } 50%{ transform:translateY(-5px) rotate(1deg); } }
+  .hello{ font-size:clamp(16px,4.2vw,22px); font-weight:600; margin:4px 0 2px; }
+  .parade{ display:flex; justify-content:center; flex-wrap:wrap; gap:2px; margin:8px 0 6px; }
+  .parade button{ width:clamp(54px,11vw,92px); background:none; padding:0; animation:hop 2.6s ease-in-out infinite; }
+  @keyframes hop{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
+  .home-stars{ display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin:6px 0 14px; }
+  .pill{ background:#fff; border-radius:999px; padding:6px 14px; box-shadow:var(--sh); font-weight:700; font-size:18px; display:inline-flex; align-items:center; gap:6px; }
+  .badge-row{ display:flex; gap:6px; }
+  .badge-dot{ width:34px; height:34px; border-radius:50%; display:grid; place-items:center; font-size:17px; background:#E7ECF5; border:3px solid #fff; box-shadow:0 3px 0 rgba(0,0,0,.12); filter:grayscale(1); opacity:.5; }
+  .badge-dot.on{ background:var(--c); filter:none; opacity:1; }
+
+  .section-title{ font-weight:700; font-size:clamp(16px,4vw,20px); color:#fff; text-shadow:0 2px 0 rgba(0,0,0,.25); margin:18px 4px 8px; }
+  .game-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .tile{
+    background:var(--c); color:#fff; border-radius:26px; padding:14px 8px 12px; box-shadow:0 7px 0 rgba(0,0,0,.2);
+    display:flex; flex-direction:column; align-items:center; gap:8px; font-weight:700; font-size:clamp(15px,3.8vw,19px);
+    text-shadow:0 2px 0 rgba(0,0,0,.2); transition:transform .12s ease;
+  }
+  .tile .ic{ font-size:clamp(34px,9vw,46px); width:1.7em; height:1.7em; border-radius:50%; background:rgba(255,255,255,.3); display:grid; place-items:center; text-shadow:none; }
+  .tile:active{ transform:translateY(6px); box-shadow:0 1px 0 rgba(0,0,0,.2); }
+  @media (max-width:600px){ .game-grid{ grid-template-columns:repeat(2,1fr); gap:10px; } }
+  .parent-note{ text-align:center; font-size:12.5px; color:#1d3b1a; opacity:.75; margin-top:22px; line-height:1.45; }
+
+  /* ---------- GAME SHELL ---------- */
+  .topbar{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .round-btn{ width:56px; height:56px; border-radius:50%; background:#fff; box-shadow:var(--sh); font-size:26px; flex-shrink:0; display:grid; place-items:center; }
+  .round-btn:active{ transform:translateY(4px); box-shadow:var(--sh-press); }
+  .game-title{ flex:1; text-align:center; font-weight:700; font-size:clamp(18px,5vw,28px); color:#fff; text-shadow:0 2px 0 rgba(0,0,0,.25); }
+  .prompt-row{ display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:12px; }
+  .prompt{ background:#fff; border-radius:22px; padding:12px 18px; box-shadow:var(--sh); font-weight:700; font-size:clamp(17px,4.4vw,24px); text-align:center; line-height:1.25; max-width:720px; }
+  .board{ background:rgba(255,255,255,.6); border-radius:30px; padding:16px; min-height:340px; display:flex; flex-direction:column; align-items:center; gap:16px; }
+  @media (max-width:420px){ .opts{ gap:10px; } .board{ padding:12px; gap:12px; border-radius:24px; } .round-btn{ width:50px; height:50px; font-size:23px; } }
+
+  /* shared answer buttons */
+  .opts{ display:flex; flex-wrap:wrap; gap:14px; justify-content:center; width:100%; }
+  .opt{
+    background:#fff; border-radius:24px; box-shadow:var(--sh); padding:8px; border:5px solid transparent;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; transition:transform .12s ease;
+    width:clamp(88px,26vw,160px); min-height:clamp(88px,26vw,160px); font-weight:700; font-size:clamp(14px,3.6vw,17px);
+  }
+  .opt:active{ transform:translateY(5px); box-shadow:var(--sh-press); }
+  .opt.ok{ border-color:var(--good); background:#EFFFF3; }
+  .opt.no{ border-color:var(--bad); }
+  .opt .av{ width:82%; }
+  .opt.emoji{ font-size:clamp(46px,12vw,66px); line-height:1; }
+  .lock .opt, .lock .tap{ pointer-events:none; }
+
+  .next-btn{ background:var(--yellow); border-radius:20px; padding:12px 26px; font-weight:700; font-size:19px; box-shadow:var(--sh); }
+  .next-btn:active{ transform:translateY(5px); box-shadow:var(--sh-press); }
+
+  /* ---------- TEAM ---------- */
+  .team-stage{ display:flex; align-items:center; justify-content:center; gap:18px; flex-wrap:wrap; min-height:200px; width:100%; }
+  .team-big{ width:clamp(150px,40vw,210px); }
+  .team-info{ display:flex; flex-direction:column; gap:8px; align-items:flex-start; min-width:180px; }
+  .name-tag{ color:#fff; font-weight:700; font-size:clamp(24px,6vw,34px); padding:4px 18px; border-radius:16px; box-shadow:var(--sh); }
+  .info-line{ background:#fff; border-radius:14px; padding:6px 12px; font-weight:600; font-size:clamp(15px,3.8vw,19px); box-shadow:0 3px 0 rgba(0,0,0,.1); display:flex; align-items:center; gap:8px; }
+  .info-line .sw{ width:22px; height:22px; border-radius:50%; }
+  .info-veh{ width:150px; }
+  .pup-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; width:100%; max-width:640px; }
+  .pup-btn{ background:#fff; border-radius:20px; box-shadow:var(--sh); padding:8px 4px 6px; border-bottom:6px solid var(--c); display:flex; flex-direction:column; align-items:center; font-weight:700; font-size:clamp(12px,3.2vw,16px); }
+  .pup-btn:active{ transform:translateY(5px); box-shadow:var(--sh-press); }
+  .pup-btn .av{ width:78%; }
+  .hint-big{ font-size:clamp(16px,4vw,22px); font-weight:600; color:var(--muted); text-align:center; }
+
+  /* ---------- MISSION (vehicles) ---------- */
+  .mission{ position:relative; width:100%; height:clamp(200px,42vw,280px); border-radius:24px; overflow:hidden; background:linear-gradient(#8FD8FF,#DDF5FF); }
+  .mission .ground{ position:absolute; left:0; right:0; bottom:0; height:30%; }
+  .t-road .ground{ background:#5B6472; }
+  .t-road .ground::before{ content:''; position:absolute; top:46%; left:0; right:0; height:5px; background:repeating-linear-gradient(90deg,#FFD84D 0 30px,transparent 30px 56px); }
+  .t-water .ground{ background:linear-gradient(#4FB3F6,#1E7FD0); height:34%; }
+  .t-snow .ground{ background:#F4FAFF; box-shadow:inset 0 6px 0 #D8ECFA; }
+  .t-jungle{ background:linear-gradient(#9BE38A,#DDF7C8) !important; }
+  .t-jungle .ground{ background:#8D6E4A; }
+  .t-sky .ground{ background:#7CCB5C; height:18%; }
+  .problem{ position:absolute; right:6%; bottom:24%; font-size:clamp(54px,14vw,90px); line-height:1; animation:wobble 1.4s ease-in-out infinite; }
+  .t-sky .problem{ bottom:16%; }
+  @keyframes wobble{ 0%,100%{ transform:rotate(-6deg); } 50%{ transform:rotate(6deg); } }
+  .veh{ position:absolute; left:0; bottom:12%; width:clamp(150px,36vw,220px); }
+  .t-sky .veh{ bottom:44%; }
+  .t-water .veh{ bottom:16%; }
+  .rotor{ animation:rotor .12s linear infinite alternate; transform-box:fill-box; transform-origin:center; }
+  @keyframes rotor{ from{ transform:scaleX(1); } to{ transform:scaleX(.15); } }
+  .blink{ animation:blink .5s steps(1) infinite; }
+  .blink2{ animation:blink .5s steps(1) infinite .25s; }
+  @keyframes blink{ 50%{ opacity:.2; } }
+
+  /* ---------- BALLOONS ---------- */
+  .balloon-field{ display:flex; flex-wrap:wrap; gap:6px 10px; justify-content:center; width:100%; max-width:720px; min-height:260px; align-items:center; }
+  .balloon{ background:none; padding:0; width:clamp(70px,19vw,100px); animation:float 3s ease-in-out infinite; }
+  @keyframes float{ 0%,100%{ transform:translateY(0) rotate(-3deg); } 50%{ transform:translateY(-12px) rotate(3deg); } }
+  .balloon.popped{ visibility:hidden; }
+
+  /* ---------- SHAPES ---------- */
+  .shape-opt svg{ width:80%; }
+
+  /* ---------- COUNT ---------- */
+  .count-field{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-width:660px; min-height:120px; align-items:center; }
+  .count-item{ width:clamp(62px,15vw,84px); height:clamp(62px,15vw,84px); background:#fff; border-radius:20px; box-shadow:var(--sh); font-size:clamp(36px,9vw,48px); display:grid; place-items:center; position:relative; padding:4px; }
+  .count-item.counted{ background:#FFF6C9; }
+  .count-item .num{ position:absolute; top:-10px; right:-10px; width:30px; height:30px; border-radius:50%; background:#1E6FD9; color:#fff; font-size:17px; font-weight:700; display:grid; place-items:center; box-shadow:0 3px 0 rgba(0,0,0,.15); }
+  .num-opt{ font-size:clamp(44px,12vw,62px) !important; color:#1E6FD9; }
+  .dots{ display:flex; flex-wrap:wrap; gap:3px; justify-content:center; max-width:80px; }
+  .dots i{ width:9px; height:9px; border-radius:50%; background:#FFA630; display:block; }
+
+  /* ---------- SIZE ---------- */
+  .size-stage{ display:flex; gap:18px; align-items:flex-end; justify-content:center; min-height:230px; width:100%; flex-wrap:nowrap; }
+  .size-dog{ background:none; padding:0; }
+
+  /* ---------- SORT ---------- */
+  .sort-items{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+  .sort-item{ width:clamp(66px,17vw,86px); height:clamp(66px,17vw,86px); border-radius:20px; background:#fff; border:5px solid transparent; font-size:clamp(34px,9vw,46px); box-shadow:var(--sh); display:grid; place-items:center; transition:transform .12s ease; }
+  .sort-item.sel{ border-color:var(--yellow); transform:translateY(-8px) scale(1.06); }
+  .sort-item.gone{ visibility:hidden; }
+  .bins{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .bin{ width:clamp(74px,20vw,104px); background:none; padding:0; }
+  .bin:active{ transform:translateY(4px); }
+  .bin svg{ width:100%; filter:drop-shadow(0 5px 0 rgba(0,0,0,.15)); }
+
+  /* ---------- WEATHER ---------- */
+  .weather-stage{ position:relative; width:100%; height:clamp(190px,40vw,250px); border-radius:24px; overflow:hidden; display:flex; align-items:flex-end; justify-content:center; transition:background .5s; }
+  .weather-stage .wdog{ width:clamp(120px,30vw,170px); margin-bottom:8px; position:relative; z-index:2; }
+  .weather-big{ position:absolute; top:10px; right:16px; font-size:clamp(50px,12vw,74px); }
+  .particle{ position:absolute; top:-30px; pointer-events:none; }
+
+  /* ---------- MEMO ---------- */
+  .memo-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; width:100%; max-width:470px; }
+  .memo-card{ aspect-ratio:1/1; perspective:700px; background:none; padding:0; }
+  .memo-inner{ position:relative; width:100%; height:100%; transition:transform .45s; transform-style:preserve-3d; }
+  .memo-card.up .memo-inner{ transform:rotateY(180deg); }
+  .memo-face{ position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; border-radius:18px; display:grid; place-items:center; box-shadow:var(--sh); }
+  .memo-back{ background:linear-gradient(135deg,#1E6FD9,#5EC4FF); font-size:clamp(26px,7vw,38px); border:4px solid #fff; }
+  .memo-front{ background:#fff; transform:rotateY(180deg); padding:6px; }
+  .memo-card.done .memo-front{ background:#E6FFEC; }
+  .status{ font-weight:700; font-size:clamp(16px,4vw,20px); }
+
+  /* ---------- SHADOWS ---------- */
+  .shadow-big{ width:clamp(150px,38vw,200px); }
+  .shadow-big.dark svg{ filter:brightness(0) opacity(.82); }
+  .shadow-big svg{ transition:filter .6s; }
+
+  /* ---------- PATTERN ---------- */
+  .seq{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center; }
+  .seq-cell{ width:clamp(54px,13vw,78px); height:clamp(54px,13vw,78px); background:#fff; border-radius:16px; box-shadow:0 4px 0 rgba(0,0,0,.12); display:grid; place-items:center; padding:5px; }
+  .seq-cell.q{ background:#FFF2B3; border:4px dashed #FFA630; font-size:clamp(30px,8vw,42px); font-weight:700; color:#E08300; animation:pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+
+  /* ---------- WHERE ---------- */
+  .where{ position:relative; width:100%; max-width:560px; }
+  .where > svg{ width:100%; height:auto; border-radius:22px; }
+  .zone{ position:absolute; width:22%; aspect-ratio:1/1; transform:translate(-50%,-50%); border-radius:50%; background:rgba(255,255,255,.25); border:4px dashed rgba(255,255,255,.95); animation:pulse 1.6s ease-in-out infinite; }
+  .where .placed{ position:absolute; width:20%; transform:translate(-50%,-62%); pointer-events:none; }
+
+  /* ---------- PAINT ---------- */
+  .paint-wrap{ display:flex; gap:14px; align-items:flex-start; justify-content:center; width:100%; flex-wrap:wrap; }
+  .paint-canvas{ width:clamp(220px,62vw,320px); background:#fff; border-radius:24px; box-shadow:var(--sh); padding:10px; position:relative; }
+  .paint-canvas [data-part]{ cursor:pointer; }
+  .paint-ref{ position:absolute; top:8px; right:8px; width:64px; background:#F3F6FB; border-radius:14px; padding:3px; }
+  .palette{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-width:640px; }
+  .crayon{ width:clamp(46px,12vw,58px); height:clamp(46px,12vw,58px); border-radius:50%; box-shadow:var(--sh); border:5px solid #fff; }
+  .crayon.on{ transform:translateY(-6px) scale(1.12); border-color:var(--ink); }
+  .mini-row{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+  .mini{ width:52px; height:52px; background:#fff; border-radius:14px; box-shadow:0 3px 0 rgba(0,0,0,.12); padding:3px; border:3px solid transparent; }
+  .mini.on{ border-color:var(--c); }
+
+  /* ---------- OVERLAY / FX ---------- */
+  #fx{ position:fixed; inset:0; pointer-events:none; z-index:50; overflow:hidden; }
+  .confetti{ position:absolute; width:11px; height:11px; border-radius:2px; }
+  .overlay{ position:fixed; inset:0; background:rgba(20,40,80,.55); display:none; align-items:center; justify-content:center; z-index:40; padding:16px; }
+  .overlay.show{ display:flex; }
+  .ov-card{ background:#fff; border-radius:30px; padding:22px 22px 20px; text-align:center; max-width:360px; width:100%; box-shadow:0 10px 0 rgba(0,0,0,.2); animation:popin .4s ease-out; }
+  @keyframes popin{ from{ transform:scale(.6); opacity:0; } to{ transform:scale(1); opacity:1; } }
+  .ov-title{ font-size:28px; font-weight:700; color:#E08300; }
+  .ov-badge{ width:150px; height:150px; margin:10px auto; border-radius:50%; display:grid; place-items:center; border:8px solid #FFD84D; box-shadow:0 0 0 6px #fff, 0 0 0 10px rgba(255,216,77,.5); }
+  .ov-badge .av{ width:78%; }
+  .ov-text{ font-size:19px; font-weight:600; margin-bottom:14px; }
+
+  .shake{ animation:shake .35s; }
+  @keyframes shake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-9px); } 75%{ transform:translateX(9px); } }
+
+  @media (prefers-reduced-motion: reduce){ *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; } }
+</style>
+</head>
+<body>
+
+<div class="cloud c1"></div>
+<div class="cloud c2"></div>
+<div id="fx"></div>
+
+<!-- ===================== HOME ===================== -->
+<section class="screen active" id="home">
+  <div class="home-head">
+    <h1>🐾 Labková Škôlka 🐾</h1>
+    <div class="hello" id="hello"></div>
+    <div class="parade" id="parade"></div>
+    <div class="home-stars">
+      <span class="pill">⭐ <b class="starCount">0</b></span>
+      <div class="badge-row" id="badgeRow"></div>
+    </div>
+  </div>
+  <div id="homeSections"></div>
+  <div class="parent-note">
+    Pre rodičov: hry sú pre deti okolo 4 rokov — farby, tvary, čísla, veľkosti, emócie, logika, priestor, pamäť a jemná motorika.<br>
+    Hlas funguje najlepšie v prehliadači Chrome alebo Edge so slovenským hlasom. Každých 5 hviezdičiek = nový odznak.
+  </div>
+</section>
+
+<!-- ===================== GAME ===================== -->
+<section class="screen" id="game">
+  <div class="topbar">
+    <button class="round-btn" id="homeBtn" aria-label="Domov">🏠</button>
+    <div class="game-title" id="gameTitle"></div>
+    <span class="pill">⭐ <b class="starCount">0</b></span>
+  </div>
+  <div class="prompt-row">
+    <div class="prompt" id="prompt"></div>
+    <button class="round-btn" id="sayBtn" aria-label="Zopakovať">🔊</button>
+  </div>
+  <div class="board" id="board"></div>
+</section>
+
+<div class="overlay" id="overlay">
+  <div class="ov-card">
+    <div class="ov-title">Nový odznak!</div>
+    <div class="ov-badge" id="ovBadge"></div>
+    <div class="ov-text" id="ovText"></div>
+    <button class="next-btn" id="ovClose">Ďalej ➜</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   NASTAVENIA
+   ============================================================ */
+const KID = 'Tomáško';
+
+/* ============================================================
+   TÍM — farba a funkcia podľa Labkovej patroly
+   g: 'm' / 'f' — kvôli správnemu tvaru prídavných mien (červený / červená)
+   ============================================================ */
+const PUPS = [
+  { id:'marshall', name:'Marshall', g:'m', hex:'#E53935', stem:'červen', job:'hasič', ride:'Jazdí na hasičskom aute', veh:'fire', terrain:'road',
+    coat:'#FFFFFF', ear:'#2E3140', earType:'flop', muzzle:'#FFFFFF', spots:'#2E3140', hat:'helmet', badge:'🔥',
+    problem:{ icon:'🔥', text:'Horí strom pri ceste! Kto ho uhasí?' }, sentence:'Marshall prišiel s hasičským autom a uhasil oheň. Šššš!' },
+  { id:'chase', name:'Chase', g:'m', hex:'#1E6FD9', stem:'modr', job:'policajt', ride:'Jazdí na policajnom aute', veh:'police', terrain:'road',
+    coat:'#CF9455', ear:'#6B4423', earType:'point', muzzle:'#F3D6AE', saddle:'#6B4423', hat:'police', badge:'⭐',
+    problem:{ icon:'🚦', text:'Na ceste je zmätok! Kto zastaví autá?' }, sentence:'Chase zapol sirénu a riadi dopravu. Autá, stáť!' },
+  { id:'skye', name:'Skye', g:'f', hex:'#FF5FA2', stem:'ružov', job:'pilotka', ride:'Lieta na helikoptére', veh:'heli', terrain:'sky',
+    coat:'#EBCB9F', ear:'#C7965F', earType:'flop', muzzle:'#FAEBD5', hat:'goggles', badge:'✈️',
+    problem:{ icon:'⛰️', text:'Kamarát sa stratil vysoko na kopci! Kto poletí hore?' }, sentence:'Skye letí helikoptérou vysoko v oblakoch a kamaráta našla!' },
+  { id:'rubble', name:'Rubble', g:'m', hex:'#F5B800', stem:'žlt', job:'stavbár', ride:'Jazdí na bagri', veh:'digger', terrain:'road',
+    coat:'#E9CDA4', ear:'#BE915F', earType:'small', muzzle:'#FFF6E8', hat:'hardhat', badge:'🚧',
+    problem:{ icon:'🪨', text:'Na ceste leží veľký kameň! Kto ho odpratá?' }, sentence:'Rubble odtlačil kameň bagrom. Cesta je voľná!' },
+  { id:'rocky', name:'Rocky', g:'m', hex:'#3BAA4A', stem:'zelen', job:'opravár', ride:'Jazdí na smetiarskom aute', veh:'recycle', terrain:'road',
+    coat:'#A9AEB9', ear:'#7D828F', earType:'small', muzzle:'#EEF0F4', hat:'cap', badge:'♻️',
+    problem:{ icon:'🛠️', text:'V parku sa pokazila hojdačka! Kto ju opraví?' }, sentence:'Rocky to opravil náradím. Hojdačka zase funguje!' },
+  { id:'zuma', name:'Zuma', g:'m', hex:'#FF8A1F', stem:'oranžov', job:'záchranár na vode', ride:'Jazdí na vznášadle', veh:'hover', terrain:'water',
+    coat:'#7A4A2A', ear:'#55311A', earType:'flop', muzzle:'#9C6A45', hat:'diving', badge:'⚓',
+    problem:{ icon:'🛟', text:'Kamarát je vo vode a nevie plávať! Kto ho zachráni?' }, sentence:'Zuma prifrčal na vznášadle a vytiahol kamaráta z vody!' },
+  { id:'everest', name:'Everest', g:'f', hex:'#8E5BD8', stem:'fialov', job:'záchranárka na snehu', ride:'Jazdí na snežnom skútri', veh:'snow', terrain:'snow',
+    coat:'#8F99AD', ear:'#6E7890', earType:'point', muzzle:'#FFFFFF', mask:'#FFFFFF', hat:'beanie', badge:'❄️',
+    problem:{ icon:'⛄', text:'Niekto uviazol v snehu! Kto ho vyhrabe?' }, sentence:'Everest prišla na snežnom skútri a vyhrabala kamaráta zo snehu!' },
+  { id:'tracker', name:'Tracker', g:'m', hex:'#8D6E3F', stem:'hned', job:'záchranár v džungli', ride:'Jazdí na džípe', veh:'jeep', terrain:'jungle',
+    coat:'#E0AC6E', ear:'#C48A4A', earType:'big', muzzle:'#F7E2C4', hat:'safari', badge:'🧭',
+    problem:{ icon:'🐒', text:'Opička sa stratila v džungli! Kto ju nájde?' }, sentence:'Tracker má veľké uši a počuje všetko. Opička je tu!' },
+];
+const pupById = id => PUPS.find(p=>p.id===id);
+
+const COLORS = [
+  { stem:'červen', hex:'#E53935' }, { stem:'modr', hex:'#1E6FD9' }, { stem:'žlt', hex:'#FFC20E' },
+  { stem:'zelen', hex:'#3BAA4A' }, { stem:'oranžov', hex:'#FF8A1F' }, { stem:'fialov', hex:'#8E5BD8' },
+  { stem:'ružov', hex:'#FF5FA2' }, { stem:'hned', hex:'#8D6E3F' },
+];
+const NUM = ['nula','jeden','dva','tri','štyri','päť','šesť','sedem','osem','deväť','desať'];
+const PRAISE = ['Výborne!','Super!','Paráda!','Bravó!','Si šikovný!',`Výborne, ${KID}!`,'Skvelá práca!','Hurá, správne!'];
+const TRY = ['Skús ešte raz!','Ešte raz, ty to dáš!','Hmm, skús iný.','Takmer! Skús znova.'];
+
+/* ============================================================
+   POMOCNÍCI
+   ============================================================ */
+const $ = s => document.querySelector(s);
+function h(tag, cls, html){ const e=document.createElement(tag); if(cls) e.className=cls; if(html!=null) e.innerHTML=html; return e; }
+const rnd = n => Math.floor(Math.random()*n);
+const pick = a => a[rnd(a.length)];
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=rnd(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const sample = (a,n) => shuffle(a).slice(0,n);
+const adj = (stem,p) => stem + (p.g==='f' ? 'á' : 'ý');
+function pickNot(arr, prev){ let x; do{ x=pick(arr); }while(arr.length>1 && x===prev); return x; }
+function bump(el, s=1.18){ if(el) el.animate([{transform:'scale(1)'},{transform:`scale(${s})`},{transform:'scale(1)'}],{duration:420,easing:'ease-out'}); }
+function shakeEl(el){ if(!el) return; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+
+/* ---- uloženie hviezd a odznakov (len v tomto prehliadači) ---- */
+const SAVE_KEY = 'labkova-skolka-v2';
+let save = { stars:0, badges:[] };
+try{ const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if(s && typeof s.stars==='number') save = { stars:s.stars, badges:Array.isArray(s.badges)?s.badges:[] }; }catch(e){}
+function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+
+/* ============================================================
+   ZVUK A HLAS
+   ============================================================ */
+let voices = [];
+function loadVoices(){ voices = ('speechSynthesis' in window) ? speechSynthesis.getVoices() : []; }
+if('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+function pickVoice(){
+  const sk = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('sk'));
+  if(!sk.length) return null;
+  return sk.find(v => /female|žena|zuzana|laura|kristina|hana|viktoria|google/i.test(v.name)) || sk[0];
+}
+let lastSay = '';
+function speak(text){
+  try{
+    if(!('speechSynthesis' in window) || !text) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const v = pickVoice(); if(v) u.voice = v;
+    u.lang = 'sk-SK'; u.rate = 0.9; u.pitch = 1.2;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+let actx = null;
+function ac(){
+  try{
+    if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+    if(actx.state === 'suspended') actx.resume();
+    return actx;
+  }catch(e){ return null; }
+}
+function tone(f, start, dur, type='sine', vol=.14, f2){
+  const c = ac(); if(!c) return;
+  const o = c.createOscillator(), g = c.createGain(), t = c.currentTime + start;
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if(f2) o.frequency.exponentialRampToValueAtTime(f2, t+dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t+0.02); g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+0.05);
+}
+const sfx = {
+  good(){ tone(523,0,.16); tone(659,.09,.16); tone(784,.18,.32); },
+  bad(){ tone(330,0,.18,'triangle',.1); tone(247,.13,.26,'triangle',.09); },
+  pop(){ tone(880,0,.09,'square',.06,300); },
+  tap(){ tone(660,0,.07,'sine',.08); },
+  bark(){ tone(520,0,.11,'sawtooth',.06,260); tone(560,.16,.11,'sawtooth',.06,280); },
+  siren(){ for(let i=0;i<4;i++){ tone(700,i*.3,.15,'triangle',.07); tone(950,i*.3+.15,.15,'triangle',.07); } },
+  fanfare(){ [523,659,784,1047].forEach((f,i)=>tone(f,i*.12,.25,'triangle',.1)); tone(1047,.5,.5,'sine',.1); },
+  flip(){ tone(440,0,.06,'sine',.06,620); },
+};
+
+function confetti(n=26){
+  const fx = $('#fx'); const cols = ['#E53935','#1E6FD9','#FFC20E','#3BAA4A','#FF8A1F','#8E5BD8','#FF5FA2'];
+  const W = innerWidth, H = innerHeight;
+  for(let i=0;i<n;i++){
+    const c = h('div','confetti');
+    c.style.left = (W*0.2 + Math.random()*W*0.6)+'px'; c.style.top = (H*0.35)+'px';
+    c.style.background = pick(cols); if(Math.random()>.5) c.style.borderRadius='50%';
+    fx.appendChild(c);
+    const dx=(Math.random()-.5)*W*0.7, dy=-H*0.25+Math.random()*H*0.7, r=(Math.random()-.5)*720;
+    c.animate([{transform:'translate(0,0) rotate(0)',opacity:1},{transform:`translate(${dx}px,${dy}px) rotate(${r}deg)`,opacity:0}],{duration:1100+Math.random()*600,easing:'cubic-bezier(.2,.7,.4,1)'});
+    setTimeout(()=>c.remove(),1800);
+  }
+}
+
+/* ============================================================
+   KRESBY — psík, čiapky, vozidlá
+   ============================================================ */
+const HATS = {
+  helmet:{ m:'#D32F2F', s:'#FFD84D', d:(A,B)=>`<path d="M32 42 Q33 12 60 10 Q87 12 88 42 Z" ${A}/><rect x="25" y="37" width="70" height="8" rx="4" ${A}/><path d="M54 13 h12 v16 l-6 5 l-6 -5 z" ${B}/>` },
+  police:{ m:'#1A4FA0', s:'#FFD84D', d:(A,B)=>`<path d="M34 39 Q36 16 60 14 Q84 16 86 39 Z" ${A}/><path d="M29 37 h62 q-2 9 -31 9 q-29 0 -31 -9z" ${A}/><circle cx="60" cy="27" r="5.5" ${B}/>` },
+  goggles:{ m:'#FF8FC0', s:'#B3E5FC', d:(A,B)=>`<path d="M33 41 Q35 15 60 13 Q85 15 87 41 Z" ${A}/><circle cx="48" cy="33" r="8" ${B}/><circle cx="72" cy="33" r="8" ${B}/>` },
+  hardhat:{ m:'#FFC20E', s:'#D99A00', d:(A,B)=>`<path d="M32 41 Q33 11 60 9 Q87 11 88 41 Z" ${A}/><rect x="27" y="37" width="66" height="7" rx="3.5" ${B}/><rect x="56" y="9" width="8" height="30" rx="4" ${B}/>` },
+  cap:{ m:'#3BAA4A', s:'#23772F', d:(A,B)=>`<path d="M34 41 Q36 15 60 13 Q84 15 86 41 Z" ${A}/><path d="M62 37 h34 q7 6 -3 9 h-31 z" ${B}/><circle cx="60" cy="14" r="3.5" ${B}/>` },
+  diving:{ m:'#FF8A1F', s:'#4FC3F7', d:(A,B)=>`<path d="M34 41 Q36 15 60 13 Q84 15 86 41 Z" ${A}/><rect x="37" y="27" width="46" height="13" rx="6.5" ${B}/>` },
+  beanie:{ m:'#8E5BD8', s:'#26C6DA', d:(A,B)=>`<path d="M33 41 Q34 13 60 11 Q86 13 87 41 Z" ${A}/><rect x="30" y="36" width="60" height="9" rx="4.5" ${B}/><circle cx="60" cy="10" r="7.5" ${B}/>` },
+  safari:{ m:'#C8B08A', s:'#6D4C41', d:(A,B)=>`<ellipse cx="60" cy="39" rx="38" ry="6.5" ${A}/><path d="M40 39 Q42 14 60 13 Q78 14 80 39 Z" ${A}/><rect x="40" y="31" width="40" height="5" ${B}/>` },
+};
+const EAR_PATHS = {
+  flop:['M37 40 Q13 40 17 74 Q30 82 41 60 Z','M83 40 Q107 40 103 74 Q90 82 79 60 Z'],
+  point:['M37 48 L29 12 L57 34 Z','M83 48 L91 12 L63 34 Z'],
+  big:['M39 48 L4 14 L56 32 Z','M81 48 L116 14 L64 32 Z'],
+  small:['M35 40 Q24 24 48 30 Q45 42 35 40 Z','M85 40 Q96 24 72 30 Q75 42 85 40 Z'],
+};
+const INK = '#2E3140';
+function faceParts(mood){
+  const eye = (x)=>`<circle cx="${x}" cy="56" r="5.4" fill="${INK}"/><circle cx="${x+1.8}" cy="54.2" r="1.9" fill="#fff"/>`;
+  const S = `stroke="${INK}" stroke-width="3" fill="none" stroke-linecap="round"`;
+  switch(mood){
+    case 'joy': return `<path d="M43 58 Q49 50 55 58" ${S}/><path d="M65 58 Q71 50 77 58" ${S}/><path d="M50 72 Q60 86 70 72 Z" fill="${INK}"/><path d="M55 78 Q60 84 65 78 Z" fill="#FF6F91"/>`;
+    case 'sad': return `${eye(49)}${eye(71)}<path d="M42 48 L55 44" ${S}/><path d="M65 44 L78 48" ${S}/><path d="M52 79 Q60 72 68 79" ${S}/><ellipse cx="45" cy="66" rx="3" ry="5" fill="#64B5F6"/>`;
+    case 'angry': return `${eye(49)}${eye(71)}<path d="M42 45 L55 50" ${S}/><path d="M65 50 L78 45" ${S}/><path d="M52 78 Q60 73 68 78" ${S}/>`;
+    case 'surprised': return `<circle cx="49" cy="55" r="6.8" fill="${INK}"/><circle cx="71" cy="55" r="6.8" fill="${INK}"/><circle cx="51" cy="53" r="2.2" fill="#fff"/><circle cx="73" cy="53" r="2.2" fill="#fff"/><path d="M42 44 Q49 39 56 44" ${S}/><path d="M64 44 Q71 39 78 44" ${S}/><ellipse cx="60" cy="77" rx="5" ry="6.5" fill="${INK}"/>`;
+    case 'sleepy': return `<path d="M43 56 Q49 61 55 56" ${S}/><path d="M65 56 Q71 61 77 56" ${S}/><circle cx="60" cy="76" r="3.3" fill="${INK}"/><text x="90" y="34" font-size="16" font-weight="700" fill="#5C6BC0">z</text><text x="101" y="22" font-size="12" font-weight="700" fill="#5C6BC0">z</text>`;
+    case 'scared': return `<circle cx="49" cy="56" r="6.5" fill="#fff" stroke="${INK}" stroke-width="2"/><circle cx="71" cy="56" r="6.5" fill="#fff" stroke="${INK}" stroke-width="2"/><circle cx="49" cy="57" r="2.6" fill="${INK}"/><circle cx="71" cy="57" r="2.6" fill="${INK}"/><path d="M42 45 Q49 41 55 46" ${S}/><path d="M65 46 Q71 41 78 45" ${S}/><path d="M50 78 q2.5 -3.5 5 0 t5 0 t5 0 t5 0" ${S} stroke-width="2.6"/>`;
+    default: return `${eye(49)}${eye(71)}<path d="M52 72 Q60 80 68 72" ${S}/><path d="M57 75 Q60 84 63 75 Z" fill="#FF6F91"/>`;
+  }
+}
+/* o.mood, o.paint (maľovanka), o.fills */
+function dogSVG(p, o={}){
+  const P = !!o.paint, F = o.fills || {};
+  const A = (part, def) => P ? `data-part="${part}" fill="${F[part]||'#FFFFFF'}" stroke="${INK}" stroke-width="2"` : `fill="${def}"`;
+  const ears = EAR_PATHS[p.earType].map(d=>`<path d="${d}" ${A('ears',p.ear)}/>`).join('');
+  const behind = p.earType !== 'flop';
+  const hat = HATS[p.hat];
+  const hatSVG = hat.d(A('hat',hat.m), A('hat2',hat.s));
+  const spots = (!P && p.spots) ? `<circle cx="41" cy="47" r="4.5" fill="${p.spots}"/><circle cx="81" cy="62" r="3.6" fill="${p.spots}"/><circle cx="77" cy="44" r="2.8" fill="${p.spots}"/><circle cx="45" cy="74" r="2.6" fill="${p.spots}"/><circle cx="44" cy="100" r="3.4" fill="${p.spots}"/><circle cx="80" cy="104" r="3" fill="${p.spots}"/>` : '';
+  const saddle = (!P && p.saddle) ? `<path d="M36 46 Q60 26 84 46 Q72 42 60 44 Q48 42 36 46 Z" fill="${p.saddle}" opacity=".85"/>` : '';
+  const mask = (!P && p.mask) ? `<path d="M41 54 Q50 42 60 51 Q70 42 79 54 Q84 76 60 83 Q36 76 41 54 Z" fill="${p.mask}"/>` : '';
+  return `<svg viewBox="0 0 120 124" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="60" cy="119" rx="32" ry="4.5" fill="rgba(0,0,0,.13)"/>
+    <ellipse cx="60" cy="101" rx="28" ry="17" ${A('body',p.coat)}/>
+    <ellipse cx="45" cy="115" rx="9" ry="5.5" ${A('body',p.coat)}/><ellipse cx="75" cy="115" rx="9" ry="5.5" ${A('body',p.coat)}/>
+    <path d="M35 93 Q60 82 85 93 L83 109 Q60 117 37 109 Z" ${A('vest',p.hex)}/>
+    ${P ? '' : `<circle cx="60" cy="99" r="8.5" fill="#fff" stroke="${p.hex}" stroke-width="2.5"/><text x="60" y="102.5" font-size="9.5" text-anchor="middle">${p.badge}</text>`}
+    ${behind ? ears : ''}
+    <ellipse cx="60" cy="57" rx="31" ry="27.5" ${A('head',p.coat)}/>
+    ${saddle}${mask}${spots}
+    ${behind ? '' : ears}
+    <ellipse cx="60" cy="71" rx="15.5" ry="11" ${A('muzzle',p.muzzle)}/>
+    ${!P ? `<circle cx="39" cy="66" r="4.2" fill="#FFB0BF" opacity=".7"/><circle cx="81" cy="66" r="4.2" fill="#FFB0BF" opacity=".7"/>` : ''}
+    <ellipse cx="60" cy="66" rx="6" ry="4.2" fill="${INK}"/>
+    ${faceParts(o.mood||'happy')}
+    <rect x="40" y="81" width="40" height="7" rx="3.5" ${A('collar',p.hex)}/>
+    ${hatSVG}
+  </svg>`;
+}
+function pawSVG(hex){
+  return `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="64" rx="23" ry="19" fill="${hex}"/><circle cx="26" cy="38" r="10" fill="${hex}"/><circle cx="42" cy="24" r="10" fill="${hex}"/><circle cx="58" cy="24" r="10" fill="${hex}"/><circle cx="74" cy="38" r="10" fill="${hex}"/></svg>`;
+}
+function vehicleSVG(p){
+  const c = p.hex;
+  const drv = (x,y,w) => dogSVG(p).replace('<svg ', `<svg x="${x}" y="${y}" width="${w}" height="${(w*124/120).toFixed(1)}" `);
+  const wheel = (x,r=14) => `<circle cx="${x}" cy="${100-r}" r="${r}" fill="${INK}"/><circle cx="${x}" cy="${100-r}" r="${r*.42}" fill="#CFD8DC"/>`;
+  let s = '';
+  switch(p.veh){
+    case 'fire': s = `<rect x="10" y="30" width="80" height="5" rx="2.5" fill="#CFD8DC"/><rect x="10" y="42" width="80" height="5" rx="2.5" fill="#CFD8DC"/>${[16,30,44,58,72,86].map(x=>`<rect x="${x}" y="30" width="3.5" height="17" fill="#CFD8DC"/>`).join('')}
+      ${drv(96,0,52)}<rect x="6" y="48" width="148" height="36" rx="10" fill="${c}"/><rect x="6" y="62" width="148" height="5" fill="#fff" opacity=".85"/><rect x="148" y="52" width="9" height="10" rx="3" fill="#FFD84D"/><rect x="92" y="40" width="10" height="9" rx="3" fill="#FFD84D" class="blink"/>${wheel(36)}${wheel(124)}`; break;
+    case 'police': s = `<rect x="38" y="38" width="32" height="10" rx="5" fill="#fff"/><circle cx="46" cy="43" r="4.5" fill="#E53935" class="blink"/><circle cx="62" cy="43" r="4.5" fill="#1E6FD9" class="blink2"/>
+      ${drv(80,2,50)}<path d="M6 62 Q8 47 30 47 L148 47 Q156 47 156 62 L156 84 L6 84 Z" fill="${c}"/><path d="M132 47 L141 26 L147 26 L140 47 Z" fill="#B3E5FC"/><rect x="6" y="63" width="150" height="7" fill="#fff"/><text x="30" y="82" font-size="13">⭐</text>${wheel(36)}${wheel(126)}`; break;
+    case 'heli': s = `<rect x="22" y="6" width="112" height="5" rx="2.5" fill="#455A64" class="rotor"/><rect x="76" y="10" width="6" height="16" fill="#455A64"/>
+      <path d="M8 48 L66 56 L66 66 L8 58 Z" fill="${c}"/><circle cx="10" cy="48" r="9" fill="#455A64" opacity=".6" class="rotor"/>
+      <ellipse cx="104" cy="58" rx="46" ry="33" fill="#B3E5FC"/>${drv(80,20,48)}<path d="M56 64 Q104 52 150 64 Q150 92 104 92 Q62 92 56 64 Z" fill="${c}"/>
+      <rect x="62" y="99" width="84" height="5" rx="2.5" fill="#455A64"/><rect x="78" y="90" width="4" height="11" fill="#455A64"/><rect x="124" y="90" width="4" height="11" fill="#455A64"/>`; break;
+    case 'digger': s = `<rect x="30" y="34" width="6" height="16" fill="#555"/>${drv(40,2,50)}<rect x="22" y="50" width="96" height="30" rx="8" fill="${c}"/>
+      <rect x="116" y="60" width="22" height="7" fill="#C99500"/><path d="M136 40 Q158 62 136 100 L147 100 Q164 70 147 40 Z" fill="#9E9E9E"/>
+      <rect x="14" y="76" width="112" height="24" rx="12" fill="#37474F"/>${[28,50,72,94,114].map(x=>`<circle cx="${x}" cy="88" r="7" fill="#90A4AE"/>`).join('')}`; break;
+    case 'recycle': s = `<rect x="10" y="26" width="76" height="8" rx="4" fill="#23772F"/>${drv(100,4,48)}<rect x="6" y="34" width="88" height="50" rx="8" fill="${c}"/>
+      <rect x="90" y="52" width="64" height="32" rx="9" fill="${c}"/><text x="50" y="69" font-size="26" text-anchor="middle" fill="#fff">♻</text>${wheel(36)}${wheel(128)}`; break;
+    case 'hover': s = `<rect x="8" y="78" width="144" height="18" rx="9" fill="#37474F"/><circle cx="28" cy="44" r="22" fill="#455A64"/><circle cx="28" cy="44" r="16" fill="#90A4AE"/><rect x="26" y="29" width="4" height="30" fill="#455A64" class="rotor"/>
+      ${drv(84,8,48)}<path d="M14 78 Q16 57 46 57 L140 57 Q156 59 154 78 Z" fill="${c}"/><rect x="44" y="63" width="102" height="5" fill="#fff" opacity=".85"/>`; break;
+    case 'snow': s = `${drv(68,6,48)}<path d="M18 80 Q20 55 50 55 L128 55 Q150 55 152 80 Z" fill="${c}"/><path d="M118 55 L128 30 L137 30 L132 55 Z" fill="#B3E5FC"/>
+      <rect x="22" y="65" width="126" height="5" fill="#26C6DA"/><rect x="16" y="78" width="82" height="17" rx="8.5" fill="#37474F"/><rect x="122" y="78" width="5" height="18" fill="#455A64"/>
+      <path d="M100 98 L150 98 Q160 98 158 88" stroke="#26C6DA" stroke-width="5" fill="none" stroke-linecap="round"/>`; break;
+    case 'jeep': s = `<path d="M50 56 L54 22 L112 22 L116 56" stroke="#5D4037" stroke-width="5" fill="none"/>${drv(58,6,48)}<path d="M8 57 L150 57 Q157 57 157 67 L157 84 L8 84 Z" fill="${c}"/>
+      <rect x="8" y="64" width="149" height="4" fill="#C8B08A"/><circle cx="15" cy="68" r="12" fill="${INK}"/><text x="124" y="80" font-size="14">🌿</text>${wheel(40,16)}${wheel(124,16)}`; break;
+  }
+  return `<svg viewBox="0 0 160 110" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+}
+const av = (p,o) => `<div class="av">${dogSVG(p,o)}</div>`;
+
+/* ============================================================
+   HVIEZDY, ODZNAKY, ÚSPECH / CHYBA
+   ============================================================ */
+let token = 0;             // mení sa pri prepnutí hry — staré časovače sa zrušia
+let overlayCb = null;
+function later(fn, ms){ const t = token; setTimeout(()=>{ if(t===token) fn(); }, ms); }
+function renderStars(){
+  document.querySelectorAll('.starCount').forEach(e=>e.textContent = save.stars);
+  const row = $('#badgeRow'); row.innerHTML = '';
+  PUPS.forEach(p=>{
+    const d = h('div','badge-dot' + (save.badges.includes(p.id)?' on':''), p.badge);
+    d.style.setProperty('--c', p.hex); d.title = p.name;
+    row.appendChild(d);
+  });
+}
+function addStar(){
+  save.stars++;
+  let award = null;
+  if(save.stars % 5 === 0){
+    const missing = PUPS.filter(p=>!save.badges.includes(p.id));
+    award = missing.length ? pick(missing) : pick(PUPS);
+    if(!save.badges.includes(award.id)) save.badges.push(award.id);
+  }
+  persist(); renderStars();
+  return award;
+}
+function showBadge(p, cb){
+  overlayCb = cb || null;
+  $('#ovBadge').style.background = p.hex;
+  $('#ovBadge').innerHTML = av(p,{mood:'joy'});
+  $('#ovText').textContent = `${p.name} ti dáva odznak! Máš už ${save.stars} hviezdičiek.`;
+  $('#overlay').classList.add('show');
+  sfx.fanfare(); confetti(50);
+  setTimeout(()=>speak(`Hurá! Získal si odznak! ${p.name} ti ďakuje, ${KID}!`), 300);
+}
+$('#ovClose').addEventListener('click', ()=>{
+  $('#overlay').classList.remove('show');
+  const cb = overlayCb; overlayCb = null; if(cb) cb();
+});
+/* správna odpoveď */
+function good(el, say, next, delay){
+  sfx.good(); bump(el, 1.15); confetti();
+  if(el && el.classList) el.classList.add('ok');
+  const text = say ? `${pick(PRAISE)} ${say}` : pick(PRAISE);
+  speak(text);
+  const badge = addStar();
+  const d = delay || Math.max(1900, text.length*72);
+  const t = token;
+  setTimeout(()=>{
+    if(t !== token) return;
+    if(badge) showBadge(badge, ()=>{ if(t===token && next) next(); });
+    else if(next) next();
+  }, d);
+}
+/* zlá odpoveď — jemne, bez trestu */
+function bad(el, say){
+  sfx.bad(); shakeEl(el);
+  if(el && el.classList){ el.classList.add('no'); setTimeout(()=>el.classList.remove('no'), 600); }
+  speak(say || pick(TRY));
+}
+function ask(text, spoken){
+  $('#prompt').textContent = text;
+  lastSay = spoken || text.replace(/[A-ZÁÄČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ]{2,}/g, m=>m.toLowerCase());
+  bump($('#prompt'), 1.05);
+  speak(lastSay);
+}
+$('#sayBtn').addEventListener('click', ()=>speak(lastSay));
+
+/* ============================================================
+   HRY
+   ============================================================ */
+
+/* 1) SPOZNAJ TÍM — mená, farby, povolania */
+function gTeam(b){
+  ask('Ťukni na psíka a spoznaj ho!');
+  const stage = h('div','team-stage', `<div class="hint-big">🐾 Vyber si psíka dole 🐾</div>`);
+  const grid = h('div','pup-grid');
+  b.append(stage, grid);
+  PUPS.forEach(p=>{
+    const btn = h('button','pup-btn', av(p) + `<span style="color:${p.hex}">${p.name}</span>`);
+    btn.style.setProperty('--c', p.hex);
+    btn.onclick = ()=>{
+      sfx.bark();
+      stage.innerHTML = '';
+      const big = h('div','team-big', dogSVG(p,{mood:'joy'}));
+      const info = h('div','team-info',
+        `<div class="name-tag" style="background:${p.hex}">${p.name}</div>
+         <div class="info-line"><span class="sw" style="background:${p.hex}"></span>${adj(p.stem,p)}</div>
+         <div class="info-line">🦺 ${p.job}</div>
+         <div class="info-veh">${vehicleSVG(p)}</div>`);
+      stage.append(big, info);
+      bump(big, 1.12);
+      speak(`Toto je ${p.name}. ${p.name} je ${adj(p.stem,p)} a je ${p.job}. ${p.ride}.`);
+    };
+    grid.appendChild(btn);
+  });
+}
+
+/* 2) KTO POMÔŽE? — funkcia psíka podľa problému */
+function gHelp(b){
+  let prev = null;
+  function round(){
+    b.innerHTML = ''; b.classList.remove('lock');
+    const p = pickNot(PUPS, prev); prev = p;
+    const opts = shuffle([p, ...sample(PUPS.filter(x=>x!==p), 2)]);
+    const stage = h('div', `mission t-${p.terrain}`, `<div class="ground"></div><div class="problem">${p.problem.icon}</div>`);
+    const row = h('div','opts');
+    opts.forEach(o=>{
+      const btn = h('button','opt', av(o) + `<span style="color:${o.hex}">${o.name}</span>`);
+      btn.onclick = ()=>{
+        if(o !== p){ bad(btn, `${o.name} je ${o.job}. Skús iného psíka!`); return; }
+        b.classList.add('lock');
+        drive(stage, p);
+        good(btn, p.sentence, round, 6200);
+      };
+      row.appendChild(btn);
+    });
+    b.append(stage, row);
+    ask(p.problem.text);
+  }
+  function drive(stage, p){
+    const v = h('div','veh', vehicleSVG(p)); stage.appendChild(v);
+    sfx.siren();
+    const W = stage.clientWidth, vw = v.clientWidth;
+    const mid = Math.max(10, W*0.62 - vw);
+    v.animate([{transform:`translateX(${-vw-20}px)`},{transform:`translateX(${mid}px)`}],{duration:1400,easing:'cubic-bezier(.2,.8,.3,1)',fill:'forwards'});
+    later(()=>{
+      stage.querySelector('.problem').animate([{transform:'scale(1)',opacity:1},{transform:'scale(.2)',opacity:0}],{duration:500,fill:'forwards'});
+    }, 2200);
+    later(()=>{
+      v.animate([{transform:`translateX(${mid}px)`},{transform:`translateX(${W+20}px)`}],{duration:1300,easing:'ease-in',fill:'forwards'});
+    }, 3600);
+  }
+  round();
+}
+
+/* 3) FARBY — balóny */
+function gBalloons(b){
+  let prev = null;
+  function balloonSVG(hex){
+    return `<svg viewBox="0 0 60 96"><path d="M30 64 Q26 80 32 96" stroke="#7A7F95" stroke-width="1.6" fill="none"/><ellipse cx="30" cy="32" rx="25" ry="30" fill="${hex}"/><path d="M26 61 L34 61 L30 68 Z" fill="${hex}"/><ellipse cx="21" cy="20" rx="6" ry="9" fill="#fff" opacity=".45"/></svg>`;
+  }
+  function round(){
+    b.innerHTML = '';
+    const target = pickNot(COLORS, prev); prev = target;
+    const others = sample(COLORS.filter(c=>c!==target), 3);
+    const nT = 2 + rnd(3);
+    const list = shuffle([...Array(nT).fill(target), ...Array.from({length:5+rnd(3)}, ()=>pick(others))]);
+    let left = nT, popped = 0;
+    const field = h('div','balloon-field');
+    list.forEach(c=>{
+      const btn = h('button','balloon', balloonSVG(c.hex));
+      btn.style.animationDelay = (-Math.random()*3)+'s';
+      btn.onclick = ()=>{
+        if(c === target){
+          sfx.pop(); popped++; left--;
+          btn.animate([{transform:'scale(1)'},{transform:'scale(1.5)',opacity:0}],{duration:220,fill:'forwards'});
+          setTimeout(()=>btn.classList.add('popped'), 220);
+          if(left === 0) good(null, `Všetky ${target.stem}é balóny sú prasknuté!`, round);
+          else speak(NUM[popped]);
+        } else bad(btn, `To je ${c.stem}ý balón. Hľadáme ${target.stem}é!`);
+      };
+      field.appendChild(btn);
+    });
+    b.appendChild(field);
+    ask(`Ťukni na všetky ${target.stem.toUpperCase()}É balóny!`);
+  }
+  round();
+}
+
+/* 4) TVARY */
+const SHAPES = [
+  { id:'circle', name:'kruh', acc:'KRUH', fact:'Kolesá na aute sú okrúhle ako kruh.' },
+  { id:'square', name:'štvorec', acc:'ŠTVOREC', fact:'Okienko na búde je štvorec.' },
+  { id:'triangle', name:'trojuholník', acc:'TROJUHOLNÍK', fact:'Strecha domčeka je trojuholník.' },
+  { id:'rect', name:'obdĺžnik', acc:'OBDĹŽNIK', fact:'Dvere sú obdĺžnik.' },
+  { id:'star', name:'hviezda', acc:'HVIEZDU', fact:'V noci na oblohe svietia hviezdy.' },
+  { id:'heart', name:'srdce', acc:'SRDCE', fact:'Srdce znamená, že niekoho ľúbiš.' },
+  { id:'oval', name:'ovál', acc:'OVÁL', fact:'Vajíčko má tvar oválu.' },
+];
+function shapeSVG(id, c){
+  const s = {
+    circle:`<circle cx="60" cy="60" r="48" fill="${c}"/>`,
+    square:`<rect x="14" y="14" width="92" height="92" rx="8" fill="${c}"/>`,
+    triangle:`<polygon points="60,8 114,108 6,108" fill="${c}" stroke="${c}" stroke-width="6" stroke-linejoin="round"/>`,
+    rect:`<rect x="4" y="30" width="112" height="60" rx="8" fill="${c}"/>`,
+    star:`<polygon points="60,6 74,44 114,44 82,68 94,108 60,84 26,108 38,68 6,44 46,44" fill="${c}" stroke="${c}" stroke-width="4" stroke-linejoin="round"/>`,
+    heart:`<path d="M60 104 C8 68 8 26 34 14 C50 7 60 24 60 24 C60 24 70 7 86 14 C112 26 112 68 60 104 Z" fill="${c}"/>`,
+    oval:`<ellipse cx="60" cy="60" rx="34" ry="50" fill="${c}"/>`,
+  }[id];
+  return `<svg viewBox="0 0 120 120">${s}</svg>`;
+}
+function gShapes(b){
+  let prev = null, streak = 0;
+  function round(){
+    b.innerHTML = '';
+    const t = pickNot(SHAPES, prev); prev = t;
+    const n = streak >= 4 ? 4 : 3;
+    const opts = shuffle([t, ...sample(SHAPES.filter(s=>s!==t), n-1)]);
+    const cols = sample(COLORS, n);
+    const row = h('div','opts');
+    opts.forEach((s,i)=>{
+      const btn = h('button','opt shape-opt', shapeSVG(s.id, cols[i].hex));
+      btn.onclick = ()=>{
+        if(s === t){ streak++; b.classList.add('lock'); good(btn, `To je ${t.name}. ${t.fact}`, ()=>{ b.classList.remove('lock'); round(); }); }
+        else { streak = Math.max(0, streak-1); bad(btn, `To je ${s.name}. Skús nájsť ${t.acc.toLowerCase()}.`); }
+      };
+      row.appendChild(btn);
+    });
+    b.appendChild(row);
+    ask(`Kde je ${t.acc}?`);
+  }
+  round();
+}
+
+/* 5) POČÍTANIE — ťukaj a spočítaj, potom vyber číslo */
+const COUNT_THINGS = [
+  { icon:'🦴', gen:'kostičiek' }, { icon:'⚽', gen:'loptičiek' }, { icon:'🍎', gen:'jabĺčok' },
+  { icon:'⭐', gen:'hviezdičiek' }, { icon:'🎈', gen:'balónov' }, { icon:'🐾', gen:'labiek' }, { icon:'pup', gen:'psíkov' },
+];
+let countMax = 4;
+function gCount(b){
+  function dots(n){ return `<div class="dots">${'<i></i>'.repeat(n)}</div>`; }
+  function round(){
+    b.innerHTML = ''; b.classList.remove('lock');
+    const thing = pick(COUNT_THINGS);
+    const n = 1 + rnd(countMax);
+    let counted = 0;
+    const field = h('div','count-field');
+    const pups = shuffle(PUPS);
+    for(let i=0;i<n;i++){
+      const it = h('button','count-item tap', thing.icon==='pup' ? dogSVG(pups[i % pups.length]) : thing.icon);
+      it.onclick = ()=>{
+        if(it.classList.contains('counted')) return;
+        counted++; it.classList.add('counted');
+        it.appendChild(h('span','num', counted));
+        sfx.tap(); bump(it, 1.15); speak(NUM[counted]);
+      };
+      field.appendChild(it);
+    }
+    let opts = new Set([n]);
+    while(opts.size < 3){ const x = Math.max(1, Math.min(10, n + (rnd(5)-2))); opts.add(x); }
+    const row = h('div','opts');
+    shuffle([...opts]).forEach(x=>{
+      const btn = h('button','opt num-opt', `${x}${dots(x)}`);
+      btn.onclick = ()=>{
+        if(x === n){ countMax = Math.min(10, countMax+1); b.classList.add('lock'); good(btn, `Je ich ${NUM[n]}!`, round); }
+        else { countMax = Math.max(3, countMax-1); bad(btn, 'Poďme to spočítať spolu. Ťukaj na každý obrázok!'); }
+      };
+      row.appendChild(btn);
+    });
+    b.append(field, row);
+    ask(`Koľko je ${thing.gen}? Ťukaj a počítaj!`);
+  }
+  round();
+}
+
+/* 6) VEĽKÝ / MALÝ */
+function gSize(b){
+  let rounds = 0;
+  function round(){
+    b.innerHTML = ''; b.classList.remove('lock');
+    rounds++;
+    const three = rounds > 3 && Math.random() < .6;
+    const pups = sample(PUPS, three ? 3 : 2);
+    const sizes = shuffle(three ? [70,115,165] : [72,165]);
+    const wantBig = Math.random() < .5;
+    const target = wantBig ? Math.max(...sizes) : Math.min(...sizes);
+    const stage = h('div','size-stage');
+    const scale = Math.min(1, (b.clientWidth-40) / (sizes.reduce((a,c)=>a+c,0) + 40));
+    pups.forEach((p,i)=>{
+      const btn = h('button','size-dog', dogSVG(p));
+      btn.style.width = (sizes[i]*scale)+'px';
+      btn.onclick = ()=>{
+        if(sizes[i] === target){ b.classList.add('lock'); good(btn, wantBig ? `${p.name} je ${three?'najväčší':'veľký'}!` : `${p.name} je ${three?'najmenší':'malý'}!`, round); }
+        else bad(btn);
+      };
+      stage.appendChild(btn);
+    });
+    b.appendChild(stage);
+    const word = three ? (wantBig ? 'NAJVÄČŠIEHO' : 'NAJMENŠIEHO') : (wantBig ? 'VEĽKÉHO' : 'MALÉHO');
+    ask(`Nájdi ${word} psíka!`);
+  }
+  round();
+}
+
+/* 7) NÁLADY — rozpoznávanie emócií */
+const EMO = [
+  { id:'joy', stem:'šťastn', acc:'ŠŤASTNÉHO', why:()=>'lebo sa hrá s kamarátmi' },
+  { id:'sad', stem:'smutn', acc:'SMUTNÉHO', why:()=>'lebo prší a nemôže ísť von' },
+  { id:'surprised', stem:'prekvapen', acc:'PREKVAPENÉHO', why:()=>'lebo vidí obrovskú tortu' },
+  { id:'sleepy', stem:'ospal', acc:'OSPALÉHO', why:()=>'lebo je už večer' },
+  { id:'angry', stem:'nahnevan', acc:'NAHNEVANÉHO', why:p=>`lebo ${p.g==='f'?'jej':'mu'} niekto zobral loptičku` },
+  { id:'scared', stem:'vystrašen', acc:'VYSTRAŠENÉHO', why:()=>'lebo vonku hrmí' },
+];
+function gEmotions(b){
+  let prev = null, n = 0;
+  function round(){
+    b.innerHTML = ''; b.classList.remove('lock'); n++;
+    const t = pickNot(EMO, prev); prev = t;
+    const emos = shuffle([t, ...sample(EMO.filter(e=>e!==t), 2)]);
+    const pups = sample(PUPS, 3);
+    const row = h('div','opts');
+    emos.forEach((e,i)=>{
+      const p = pups[i];
+      const btn = h('button','opt', av(p,{mood:e.id}));
+      btn.onclick = ()=>{
+        if(e === t){
+          b.classList.add('lock');
+          const extra = n % 4 === 0 ? ` A ty, ${KID}? Ako sa cítiš ty?` : '';
+          good(btn, `${p.name} je ${adj(e.stem,p)}, ${e.why(p)}.${extra}`, round);
+        } else bad(btn, `${p.name} je ${adj(e.stem,p)}. Hľadáme ${t.acc.toLowerCase()} psíka.`);
+      };
+      row.appendChild(btn);
+    });
+    b.appendChild(row);
+    ask(`Nájdi ${t.acc} psíka!`);
+  }
+  round();
+}
+
+/* 8) TRIEDENIE ODPADU s Rockym */
+const BINS = [
+  { id:'paper', name:'papier', gen:'modrého koša', color:'#1E6FD9', icon:'📄' },
+  { id:'plastic', name:'plasty', gen:'žltého koša', color:'#F5B800', icon:'🧴' },
+  { id:'glass', name:'sklo', gen:'zeleného koša', color:'#3BAA4A', icon:'🍾' },
+  { id:'bio', name:'bioodpad', gen:'hnedého koša', color:'#8D6E3F', icon:'🍌' },
+];
+const TRASH = [
+  { icon:'📰', name:'Noviny', bin:'paper' }, { icon:'📦', name:'Krabica', bin:'paper' }, { icon:'✉️', name:'Obálka', bin:'paper' },
+  { icon:'🧴', name:'Fľaša od šampónu', bin:'plastic' }, { icon:'🥤', name:'Plastový pohár', bin:'plastic' }, { icon:'🛍️', name:'Igelitka', bin:'plastic' },
+  { icon:'🍾', name:'Sklenená fľaša', bin:'glass' }, { icon:'🫙', name:'Pohár od uhoriek', bin:'glass' },
+  { icon:'🍌', name:'Šupka od banánu', bin:'bio' }, { icon:'🍎', name:'Ohryzok', bin:'bio' }, { icon:'🥕', name:'Mrkvové šupky', bin:'bio' },
+];
+function binSVG(bin){
+  return `<svg viewBox="0 0 100 120"><rect x="6" y="14" width="88" height="12" rx="6" fill="${bin.color}"/><rect x="40" y="6" width="20" height="10" rx="4" fill="${bin.color}"/>
+    <path d="M12 28 L88 28 L80 114 Q79 118 75 118 L25 118 Q21 118 20 114 Z" fill="${bin.color}"/>
+    <circle cx="50" cy="70" r="26" fill="#fff" opacity=".92"/><text x="50" y="81" font-size="30" text-anchor="middle">${bin.icon}</text></svg>`;
+}
+function gSort(b){
+  function round(){
+    b.innerHTML = ''; b.classList.remove('lock');
+    const items = [];
+    BINS.forEach(bin=>{ items.push(pick(TRASH.filter(t=>t.bin===bin.id))); });
+    items.push(...sample(TRASH.filter(t=>!items.includes(t)), 2));
+    let sel = null, left = items.length;
+    const rocky = h('div','', `<div style="width:90px">${dogSVG(pupById('rocky'))}</div>`);
+    const itemsEl = h('div','sort-items');
+    shuffle(items).forEach(t=>{
+      const btn = h('button','sort-item tap', t.icon);
+      btn.onclick = ()=>{
+        itemsEl.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));
+        btn.classList.add('sel'); sel = { t, btn }; sfx.tap(); speak(`${t.name}. Do ktorého koša?`);
+      };
+      itemsEl.appendChild(btn);
+    });
+    const binsEl = h('div','bins');
+    BINS.forEach(bin=>{
+      const bb = h('button','bin', binSVG(bin));
+      bb.onclick = ()=>{
+        if(!sel){ speak('Najprv ťukni na vec, ktorú chceš vyhodiť.'); shakeEl(itemsEl); return; }
+        if(sel.t.bin === bin.id){
+          sel.btn.classList.remove('sel'); sel.btn.classList.add('gone'); left--;
+          const name = sel.t.name; sel = null;
+          bump(bb, 1.12);
+          if(left === 0) good(null, `Všetko je vytriedené! Rocky ti ďakuje!`, round, 3200);
+          else { sfx.good(); speak(`Áno! ${name} patrí do ${bin.gen}.`); }
+        } else bad(bb, `Toto nie je ${bin.name}. Skús iný kôš!`);
+      };
+      binsEl.appendChild(bb);
+    });
+    b.append(rocky, itemsEl, binsEl);
+    ask('Pomôž Rockymu triediť! Ťukni na vec a potom na kôš.');
+  }
+  round();
+}
+
+/* 9) POČASIE — čo si oblečieme / zoberieme */
+const WEATHER = [
+  { id:'sunny', name:'svieti slniečko', icon:'☀️', bg:'linear-gradient(#FFE26B,#FFF6C8)', item:{ icon:'🕶️', name:'slnečné okuliare' }, why:'Slnečné okuliare chránia očká pred slniečkom.' },
+  { id:'rainy', name:'prší', icon:'🌧️', bg:'linear-gradient(#90A4AE,#CFD8DC)', item:{ icon:'☂️', name:'dáždnik' }, why:'Pod dáždnikom ostaneš suchý.' },
+  { id:'snowy', name:'sneží', icon:'❄️', bg:'linear-gradient(#B3E5FC,#FFFFFF)', item:{ icon:'🧤', name:'rukavice' }, why:'V rukaviciach nebudú labky zamrznuté.' },
+  { id:'windy', name:'fúka vietor', icon:'🌬️', bg:'linear-gradient(#81D4FA,#E1F5FE)', item:{ icon:'🪁', name:'šarkan' }, why:'Vo vetre šarkan poletí vysoko!' },
+  { id:'cold', name:'je zima', icon:'🥶', bg:'linear-gradient(#9FA8DA,#E8EAF6)', item:{ icon:'🧣', name:'šál' }, why:'Šál zahreje krčok.' },
+];
+function gWeather(b){
+  let prev = null;
+  function particles(stage, w){
+    const sym = { rainy:'💧', snowy:'❄️', windy:'🍃' }[w.id];
+    if(!sym) return;
+    for(let i=0;i<18;i++){
+      const el = h('div','particle', sym);
+      el.style.left = (w.id==='windy' ? -10 : Math.random()*100)+'%';
+      el.style.top = (w.id==='windy' ? Math.random()*80 : -10)+'%';
+      el.style.fontSize = (12+rnd(10))+'px';
+      stage.appendChild(el);
+      const kf = w.id==='windy'
+        ? [{transform:'translateX(0) rotate(0)'},{transform:`translateX(${stage.clientWidth+60}px) rotate(360deg)`}]
+        : [{transform:'translateY(0)'},{transform:`translateY(${stage.clientHeight+40}px)`}];
+      el.animate(kf,{duration:(w.id==='rainy'?900:2400)+Math.random()*900, delay:Math.random()*1500, iterations:Infinity});
+    }
+  }
+  function round(){
+    b.innerHTML = ''; b.classList.remove('lock');
+    const w = pickNot(WEATHER, prev); prev = w;
+    const p = pick(PUPS);
+    const stage = h('div','weather-stage', `<div class="weather-big">${w.icon}</div><div class="wdog">${dogSVG(p,{mood: w.id==='cold'?'scared':'happy'})}</div>`);
+    stage.style.background = w.bg;
+    particles(stage, w);
+    const row = h('div','opts');
+    shuffle([w, ...sample(WEATHER.filter(x=>x!==w), 2)]).forEach(o=>{
+      const btn = h('button','opt emoji', o.item.icon);
+      btn.onclick = ()=>{
+        if(o === w){ b.classList.add('lock'); good(btn, `${w.why}`, round); }
+        else bad(btn, `Hmm, ${o.item.name}? Keď ${w.name}, potrebujeme niečo iné.`);
+      };
+      row.appendChild(btn);
+    });
+    b.append(stage, row);
+    ask(`Vonku ${w.name}! Čo si ${p.name} zoberie?`);
+  }
+  round();
+}
+
+/* 10) PEXESO */
+function gMemo(b){
+  function round(){
+    b.innerHTML = '';
+    const pups = sample(PUPS, 6);
+    const deck = shuffle([...pups, ...pups]);
+    let open = [], found = 0, lock = false;
+    const status = h('div','status', `Nájdené páry: 0 / ${pups.length}`);
+    const grid = h('div','memo-grid');
+    deck.forEach(p=>{
+      const card = h('button','memo-card', `<div class="memo-inner"><div class="memo-face memo-back">🐾</div><div class="memo-face memo-front">${dogSVG(p)}</div></div>`);
+      card.onclick = ()=>{
+        if(lock || card.classList.contains('up')) return;
+        sfx.flip(); card.classList.add('up'); open.push({card,p});
+        if(open.length < 2) return;
+        lock = true;
+        const [x,y] = open;
+        if(x.p === y.p){
+          later(()=>{
+            x.card.classList.add('done'); y.card.classList.add('done');
+            found++; status.textContent = `Nájdené páry: ${found} / ${pups.length}`;
+            open = []; lock = false;
+            if(found === pups.length) good(null, 'Našiel si všetky páry! Máš super pamäť!', round, 3600);
+            else { sfx.good(); speak(`Pár! To je ${x.p.name}.`); }
+          }, 450);
+        } else {
+          later(()=>{ x.card.classList.remove('up'); y.card.classList.remove('up'); open = []; lock = false; }, 1100);
+        }
+      };
+      grid.appendChild(card);
+    });
+    b.append(status, grid);
+    ask('Nájdi dvojice rovnakých psíkov!');
+  }
+  round();
+}
+
+/* 11) TIENE — čí je to tieň? */
+function gShadow(b){
+  let prev = null;
+  function round(){
+    b.innerHTML = ''; b.classList.remove('lock');
+    const p = pickNot(PUPS, prev); prev = p;
+    const big = h('div','shadow-big dark', dogSVG(p));
+    const row = h('div','opts');
+    shuffle([p, ...sample(PUPS.filter(x=>x!==p), 2)]).forEach(o=>{
+      const btn = h('button','opt', av(o) + `<span style="color:${o.hex}">${o.name}</span>`);
+      btn.onclick = ()=>{
+        if(o === p){ b.classList.add('lock'); big.classList.remove('dark'); bump(big); good(btn, `Je to ${p.name}! Spoznal si ${p.g==='f'?'ju':'ho'} podľa tvaru.`, round); }
+        else bad(btn, `Pozri sa na uši a čiapku. Skús znova!`);
+      };
+      row.appendChild(btn);
+    });
+    b.append(big, row);
+    ask('Čí je to tieň?');
+  }
+  round();
+}
+
+/* 12) ČO BUDE ĎALEJ? — postupnosti */
+function gPattern(b){
+  let level = 0;
+  function round(){
+    b.innerHTML = ''; b.classList.remove('lock');
+    const types = level < 3 ? [[0,1]] : level < 6 ? [[0,1],[0,0,1],[0,1,1]] : [[0,1],[0,0,1],[0,1,1],[0,1,2]];
+    const t = pick(types);
+    const kinds = Math.max(...t)+1;
+    const usePups = Math.random() < .5;
+    const items = usePups
+      ? sample(PUPS, kinds).map(p=>({ html:dogSVG(p), say:p.name }))
+      : sample(COLORS.slice(0,7), kinds).map(c=>({ html:pawSVG(c.hex), say:c.stem+'á labka' }));
+    const L = t.length*2 + (t.length===2 ? rnd(2) : rnd(t.length));
+    const seq = Array.from({length:L}, (_,i)=>items[t[i % t.length]]);
+    const answer = items[t[L % t.length]];
+    const seqEl = h('div','seq');
+    seq.forEach(it=>seqEl.appendChild(h('div','seq-cell', it.html)));
+    const q = h('div','seq-cell q','?'); seqEl.appendChild(q);
+    const pool = [...items];
+    if(pool.length < 3){
+      const extra = usePups ? { html:dogSVG(pick(PUPS.filter(p=>!items.some(i=>i.say===p.name)))), say:'' } : null;
+      if(extra) pool.push(extra);
+      else { const c = pick(COLORS.slice(0,7).filter(c=>!items.some(i=>i.say===c.stem+'á labka'))); pool.push({ html:pawSVG(c.hex), say:c.stem+'á labka' }); }
+    }
+    const row = h('div','opts');
+    shuffle(pool).forEach(it=>{
+      const btn = h('button','opt', `<div class="av">${it.html}</div>`);
+      btn.onclick = ()=>{
+        if(it === answer){ level++; b.classList.add('lock'); q.classList.remove('q'); q.innerHTML = it.html; good(btn, it.say ? `Ďalej ide ${it.say}.` : '', round); }
+        else bad(btn, 'Pozri sa, ako sa to opakuje. Skús znova!');
+      };
+      row.appendChild(btn);
+    });
+    b.append(seqEl, row);
+    ask('Čo bude ďalej? Doplň otáznik!');
+  }
+  round();
+}
+
+/* 13) ČO SEM NEPATRÍ? — kategórie */
+const CATS = [
+  { items:['🍎','🍌','🍐','🍇','🍓','🍊','🍒'], say:'Ostatné je ovocie.' },
+  { items:['🚗','🚒','🚓','🚑','🚜','🚌','🚕'], say:'Ostatné sú autá.' },
+  { items:['🐶','🐱','🐮','🐷','🐸','🐰','🐴'], say:'Ostatné sú zvieratká.' },
+  { items:['👕','👖','🧦','🧢','👟','🧤','👗'], say:'Ostatné je oblečenie.' },
+  { items:['⚽','🧸','🪀','🎈','🪁','🧩','🎲'], say:'Ostatné sú hračky.' },
+  { items:['🥕','🥦','🌽','🥒','🍅','🧅','🥔'], say:'Ostatné je zelenina.' },
+];
+function gOdd(b){
+  function round(){
+    b.innerHTML = ''; b.classList.remove('lock');
+    const [A, B] = sample(CATS, 2);
+    const odd = pick(B.items);
+    const row = h('div','opts');
+    shuffle([...sample(A.items,3), odd]).forEach(e=>{
+      const btn = h('button','opt emoji', e);
+      btn.onclick = ()=>{
+        if(e === odd){ b.classList.add('lock'); good(btn, `Toto sem nepatrí. ${A.say}`, round); }
+        else bad(btn, 'Toto sem patrí. Hľadaj niečo iné!');
+      };
+      row.appendChild(btn);
+    });
+    b.appendChild(row);
+    ask('Čo sem NEPATRÍ?');
+  }
+  round();
+}
+
+/* 14) KDE JE PSÍK? — na / v / vedľa / pred */
+const PLACES = [
+  { id:'na', word:'NA búdu', done:'je na búde', x:50, y:16 },
+  { id:'v', word:'DO búdy', done:'je v búde', x:50, y:72 },
+  { id:'vedla', word:'VEDĽA búdy', done:'je vedľa búdy', x:83, y:74 },
+  { id:'pred', word:'PRED búdu', done:'je pred búdou', x:24, y:84 },
+];
+const HOUSE_SVG = `<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="300" height="200" fill="#BDEBFF"/><rect y="140" width="300" height="60" fill="#7CCB5C"/>
+  <rect x="100" y="80" width="100" height="85" fill="#D84315"/><polygon points="88,84 150,32 212,84" fill="#8D4A2A"/>
+  <path d="M128 165 L128 128 Q150 104 172 128 L172 165 Z" fill="#3E2723"/>
+  <rect x="122" y="88" width="56" height="14" rx="4" fill="#FFD84D"/><text x="150" y="99" font-size="10" font-weight="700" text-anchor="middle" fill="#3E2723">BÚDA</text>
+  <circle cx="40" cy="40" r="18" fill="#FFD84D"/></svg>`;
+function gWhere(b){
+  let prev = null;
+  function round(){
+    b.innerHTML = ''; b.classList.remove('lock');
+    const pl = pickNot(PLACES, prev); prev = pl;
+    const p = pick(PUPS);
+    const wrap = h('div','where', HOUSE_SVG);
+    PLACES.forEach(z=>{
+      const zb = h('button','zone tap');
+      zb.style.left = z.x+'%'; zb.style.top = z.y+'%';
+      zb.onclick = ()=>{
+        wrap.querySelectorAll('.placed').forEach(x=>x.remove());
+        const d = h('div','placed', dogSVG(p));
+        d.style.left = z.x+'%'; d.style.top = z.y+'%';
+        wrap.appendChild(d);
+        if(z === pl){ b.classList.add('lock'); good(d, `${p.name} ${pl.done}.`, round); }
+        else { bad(zb, `Tu ${p.name} ${z.done}. My chceme ${pl.word.toLowerCase()}!`); later(()=>d.remove(), 1400); }
+      };
+      wrap.appendChild(zb);
+    });
+    const who = h('div','', `<div style="width:84px">${dogSVG(p)}</div>`);
+    b.append(who, wrap);
+    ask(`${p.name} chce ísť ${pl.word}. Ťukni tam!`);
+  }
+  round();
+}
+
+/* 15) MAĽOVANKA — jemná motorika a farby */
+const CRAYONS = [...COLORS.map(c=>({hex:c.hex, say:c.stem+'á'})), {hex:'#FFFFFF', say:'biela'}, {hex:'#2E3140', say:'čierna'}, {hex:'#F2D3A8', say:'béžová'}, {hex:'#A9AEB9', say:'sivá'}];
+function gPaint(b){
+  let p = PUPS[0], fills = {}, color = CRAYONS[0].hex, colored = new Set(), rewarded = false;
+  const minis = h('div','mini-row');
+  const wrapEl = h('div','paint-wrap');
+  const canvas = h('div','paint-canvas');
+  const palette = h('div','palette');
+  const done = h('button','next-btn','🎉 Hotovo!');
+  function draw(){
+    canvas.innerHTML = dogSVG(p,{paint:true, fills, mood:'joy'}) + `<div class="paint-ref" title="Ako v seriáli">${dogSVG(p)}</div>`;
+  }
+  PUPS.forEach(x=>{
+    const m = h('button','mini' + (x===p?' on':''), dogSVG(x));
+    m.style.setProperty('--c', x.hex);
+    m.onclick = ()=>{ p = x; fills = {}; colored = new Set(); rewarded = false; minis.querySelectorAll('.mini').forEach(e=>e.classList.remove('on')); m.classList.add('on'); draw(); speak(`Vymaľuj ${x.name}. Vzor je v rohu.`); };
+    minis.appendChild(m);
+  });
+  CRAYONS.forEach((c,i)=>{
+    const cb = h('button','crayon' + (i===0?' on':''));
+    cb.style.background = c.hex;
+    cb.onclick = ()=>{ color = c.hex; palette.querySelectorAll('.crayon').forEach(e=>e.classList.remove('on')); cb.classList.add('on'); sfx.tap(); speak(c.say); };
+    palette.appendChild(cb);
+  });
+  canvas.addEventListener('click', e=>{
+    const part = e.target.closest('[data-part]'); if(!part) return;
+    const name = part.getAttribute('data-part');
+    fills[name] = color; colored.add(name);
+    canvas.querySelectorAll(`[data-part="${name}"]`).forEach(x=>x.setAttribute('fill', color));
+    sfx.pop();
+  });
+  done.onclick = ()=>{
+    if(colored.size < 3){ speak('Ešte vymaľuj viac častí. Ťukni na farbu a potom na psíka!'); shakeEl(canvas); return; }
+    if(rewarded){ sfx.good(); confetti(); speak('Krásny obrázok!'); return; }
+    rewarded = true; good(canvas, `Krásny obrázok! ${p.name} sa ti páči!`);
+  };
+  wrapEl.appendChild(canvas);
+  draw();
+  b.append(minis, wrapEl, palette, done);
+  ask('Vyber farbu a ťukaj na psíka!');
+}
+
+/* 16) KVÍZ — farba, povolanie, vozidlo, meno */
+function gQuiz(b){
+  let streak = 0;
+  function round(){
+    b.innerHTML = ''; b.classList.remove('lock');
+    const p = pick(PUPS);
+    const n = streak >= 5 ? 4 : 3;
+    const opts = shuffle([p, ...sample(PUPS.filter(x=>x!==p), n-1)]);
+    const type = pick(['color','job','veh','name']);
+    let q, extra = null;
+    if(type==='color') q = `Kto má ${p.stem.toUpperCase()}Ú farbu?`;
+    else if(type==='job') q = `Kto je ${p.job.toUpperCase()}?`;
+    else if(type==='name') q = `Kde je ${p.name.toUpperCase()}?`;
+    else { q = 'Komu patrí toto vozidlo?'; extra = h('div','', `<div style="width:min(240px,60vw)">${vehicleSVG(p)}</div>`); extra.querySelectorAll('svg svg').forEach(s=>s.remove()); }
+    const row = h('div','opts');
+    opts.forEach(o=>{
+      const btn = h('button','opt', av(o) + (type==='name' ? '' : `<span style="color:${o.hex}">${o.name}</span>`));
+      btn.onclick = ()=>{
+        if(o === p){ streak++; b.classList.add('lock'); good(btn, `To je ${p.name}. ${p.name} je ${adj(p.stem,p)} ${p.job}.`, round); }
+        else { streak = 0; bad(btn, `To je ${o.name}. Skús znova!`); }
+      };
+      row.appendChild(btn);
+    });
+    if(extra) b.appendChild(extra);
+    b.appendChild(row);
+    ask(q, q.replace(/[A-ZÁÄČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ]{2,}/g, m=>m.toLowerCase()).replace(p.name.toLowerCase(), p.name));
+  }
+  round();
+}
+
+/* ============================================================
+   ZOZNAM HIER A NAVIGÁCIA
+   ============================================================ */
+const SECTIONS = [
+  { title:'🐶 Labková patrola', games:[
+    { id:'team', icon:'🐶', title:'Spoznaj tím', c:'#1E6FD9', start:gTeam },
+    { id:'help', icon:'🚨', title:'Kto pomôže?', c:'#E53935', start:gHelp },
+    { id:'shadow', icon:'👤', title:'Čí je tieň?', c:'#455A64', start:gShadow },
+    { id:'quiz', icon:'❓', title:'Kvíz', c:'#8E5BD8', start:gQuiz },
+  ]},
+  { title:'🎨 Farby, tvary a čísla', games:[
+    { id:'balloons', icon:'🎈', title:'Farby', c:'#FF5FA2', start:gBalloons },
+    { id:'shapes', icon:'🔺', title:'Tvary', c:'#FF8A1F', start:gShapes },
+    { id:'count', icon:'🔢', title:'Počítanie', c:'#1E88E5', start:gCount },
+    { id:'size', icon:'📏', title:'Veľký a malý', c:'#00897B', start:gSize },
+  ]},
+  { title:'🧠 Hlavička a logika', games:[
+    { id:'pattern', icon:'🔁', title:'Čo bude ďalej?', c:'#6D4C41', start:gPattern },
+    { id:'odd', icon:'🤔', title:'Čo nepatrí?', c:'#C2185B', start:gOdd },
+    { id:'memo', icon:'🃏', title:'Pexeso', c:'#3949AB', start:gMemo },
+    { id:'where', icon:'🏠', title:'Kde je psík?', c:'#D84315', start:gWhere },
+  ]},
+  { title:'🌍 Svet okolo nás', games:[
+    { id:'emotions', icon:'😊', title:'Nálady', c:'#F57C00', start:gEmotions },
+    { id:'weather', icon:'🌦️', title:'Počasie', c:'#0288D1', start:gWeather },
+    { id:'sort', icon:'♻️', title:'Triedenie', c:'#2E7D32', start:gSort },
+    { id:'paint', icon:'🖍️', title:'Maľovanka', c:'#AD1457', start:gPaint },
+  ]},
+];
+
+function openGame(g){
+  token++;
+  $('#home').classList.remove('active'); $('#game').classList.add('active');
+  $('#gameTitle').textContent = `${g.icon} ${g.title}`;
+  const b = $('#board'); b.innerHTML = ''; b.className = 'board';
+  scrollTo(0,0);
+  g.start(b);
+}
+function goHome(){
+  token++;
+  try{ speechSynthesis.cancel(); }catch(e){}
+  $('#overlay').classList.remove('show'); overlayCb = null;
+  $('#game').classList.remove('active'); $('#home').classList.add('active');
+  $('#board').innerHTML = '';
+  scrollTo(0,0);
+}
+$('#homeBtn').addEventListener('click', goHome);
+
+(function buildHome(){
+  $('#hello').textContent = `Ahoj, ${KID}! Tím ťa potrebuje 🐾`;
+  const parade = $('#parade');
+  PUPS.forEach((p,i)=>{
+    const b = h('button','', dogSVG(p));
+    b.style.animationDelay = (i*0.18)+'s'; b.title = p.name;
+    b.onclick = ()=>{ sfx.bark(); bump(b,1.25); speak(`Ahoj ${KID}! Ja som ${p.name}.`); };
+    parade.appendChild(b);
+  });
+  const wrap = $('#homeSections');
+  SECTIONS.forEach(sec=>{
+    wrap.appendChild(h('div','section-title', sec.title));
+    const grid = h('div','game-grid');
+    sec.games.forEach(g=>{
+      const t = h('button','tile', `<span class="ic">${g.icon}</span>${g.title}`);
+      t.style.setProperty('--c', g.c);
+      t.onclick = ()=>openGame(g);
+      grid.appendChild(t);
+    });
+    wrap.appendChild(grid);
+  });
+  renderStars();
+  const direct = SECTIONS.flatMap(s=>s.games).find(g=>'#'+g.id===location.hash);
+  if(direct) openGame(direct);
+})();
+</script>
+</body>
+</html>
