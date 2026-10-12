@@ -356,15 +356,24 @@ const SAY_NAMES = [
   [/Rocky/gi, 'Roki'], [/Zuma/gi, 'Zúma'], [/Tracker/gi, 'Treker'], [/Everest/gi, 'Evrest'],
 ];
 function sayNames(text){ return SAY_NAMES.reduce((t,[re,s])=>t.replace(re,s), text); }
-function speak(text){
+let currentUtter = null;
+let praising = false;      // počas pochvaly nič iné neprerušuje hlas   // držíme odkaz, inak Chrome niekedy nevyvolá onend
+/* onDone sa zavolá, keď hlas dohovorí (alebo po poistke, ak prehliadač koniec neohlási) */
+function speak(text, onDone){
+  let finished = false;
+  const fin = () => { if(finished) return; finished = true; if(onDone) onDone(); };
   try{
-    if(!('speechSynthesis' in window) || !text) return;
+    if(praising && !onDone) return;
+    if(!('speechSynthesis' in window) || !text){ fin(); return; }
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(sayNames(text));
     const v = pickVoice(); if(v) u.voice = v;
     u.lang = 'sk-SK'; u.rate = 0.9; u.pitch = 1.2;
+    u.onend = fin; u.onerror = fin;
+    currentUtter = u;
     speechSynthesis.speak(u);
-  }catch(e){}
+    if(onDone) setTimeout(fin, 3000 + text.length*120);
+  }catch(e){ fin(); }
 }
 let actx = null;
 function ac(){
@@ -547,15 +556,19 @@ function good(el, say, next, delay){
   sfx.good(); bump(el, 1.15); confetti();
   if(el && el.classList) el.classList.add('ok');
   const text = say ? `${pick(PRAISE)} ${say}` : pick(PRAISE);
-  speak(text);
   const badge = addStar();
-  const d = delay || Math.max(1900, text.length*72);
   const t = token;
-  setTimeout(()=>{
-    if(t !== token) return;
+  /* ďalej sa ide až keď hlas dopovie pochvalu (+ krátka pauza) a zároveň uplynie minimálny čas (napr. animácia auta) */
+  let waiting = 2;
+  const step = () => {
+    if(--waiting > 0 || t !== token) return;
+    praising = false;
     if(badge) showBadge(badge, ()=>{ if(t===token && next) next(); });
     else if(next) next();
-  }, d);
+  };
+  praising = true;
+  speak(text, () => setTimeout(step, 700));
+  setTimeout(step, delay || 1200);
 }
 /* zlá odpoveď — jemne, bez trestu */
 function bad(el, say){
@@ -1197,7 +1210,7 @@ const SECTIONS = [
 ];
 
 function openGame(g){
-  token++;
+  token++; praising = false;
   $('#home').classList.remove('active'); $('#game').classList.add('active');
   $('#gameTitle').textContent = `${g.icon} ${g.title}`;
   const b = $('#board'); b.innerHTML = ''; b.className = 'board';
@@ -1205,7 +1218,7 @@ function openGame(g){
   g.start(b);
 }
 function goHome(){
-  token++;
+  token++; praising = false;
   try{ speechSynthesis.cancel(); }catch(e){}
   $('#overlay').classList.remove('show'); overlayCb = null;
   $('#game').classList.remove('active'); $('#home').classList.add('active');
