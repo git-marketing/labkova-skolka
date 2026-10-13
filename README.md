@@ -1,5 +1,7 @@
 # 🐾 Labková Škôlka
 
+### ▶️ [Hrať online: git-marketing.github.io/labkova-skolka](https://git-marketing.github.io/labkova-skolka/)
+
 Vzdelávacia hra v prehliadači pre deti okolo 4 rokov s psíkmi z Labkovej patroly.
 
 Stačí otvoriť `psia-skolka-ucenie.html` v prehliadači (najlepšie Chrome alebo Edge so slovenským hlasom).
